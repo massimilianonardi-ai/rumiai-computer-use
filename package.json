@@ -1,0 +1,15 @@
+{
+  "name": "@rumiai/computer-use",
+  "version": "0.1.0",
+  "private": true,
+  "description": "RumiAI semantic Computer Use orchestration",
+  "scripts": {
+    "start": "node app/agent-loop.js",
+    "check": "node app/external-computer-control-boundary-test.js",
+    "test:context": "node app/context-session-cache-test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "Apache-2.0"
+}
