@@ -85,7 +85,7 @@ function resolveSemanticTarget(snapshot, target, roleHint, kind, app = null) {
   let locatorDetail = null;
 
   // Primary generic locator through the RumiAI Computer Control boundary.
-  // The resolver never calls agent-ctrl directly.
+  // The resolver never calls a platform backend directly.
   if (app) {
     const located = find({
       app,
@@ -129,7 +129,7 @@ function resolveSemanticTarget(snapshot, target, roleHint, kind, app = null) {
     }
 
     if (candidates.length) {
-      locatorMethod = "legacy-snapshot-no-app";
+      locatorMethod = "snapshot-no-app";
       locatorDetail = "no application identity supplied";
     }
   }

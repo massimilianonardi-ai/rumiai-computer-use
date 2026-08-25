@@ -4,9 +4,7 @@
   "private": true,
   "description": "RumiAI semantic Computer Use orchestration",
   "scripts": {
-    "start": "node app/agent-loop.js",
-    "check": "node app/external-computer-control-boundary-test.js",
-    "test:context": "node app/context-session-cache-test.js"
+    "start": "node app/agent-loop.js"
   },
   "engines": {
     "node": ">=20"

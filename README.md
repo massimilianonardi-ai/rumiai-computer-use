@@ -24,9 +24,7 @@ no bundled fallback.
 - `app/`: planner, orchestrator, executors, recovery and external boundary.
 - `contexts/`: dynamically selected planning context.
 - `providers/`: application identities and capability declarations.
-- `skills/`: validated provider competence evidence.
-- `tests/results/`: selected application-level PoC evidence.
-- `docs/history/`: selected architectural decisions promoted from the PoCs.
+- `skills/`: provider competence declarations.
 
 The supported portable workflow is owned by `rumiai-portable-runtime`:
 

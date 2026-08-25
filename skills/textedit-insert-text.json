@@ -5,7 +5,7 @@
   "status": "VALIDATED",
   "evidence": [
     {
-      "source": "micro-poc",
+      "source": "computer-use",
       "result": "PASS",
       "verification": "AX text/snapshot"
     }

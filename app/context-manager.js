@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * RumiAI Computer Use - Context Manager micro-PoC
+ * RumiAI Computer Use - Context Manager
  *
  * Two distinct concepts:
  *   - context selection for the current plan;
@@ -97,8 +97,8 @@ function expandDependencies(contexts, all) {
 }
 
 function contextLines(context) {
-  // A session context may be richer than the old compressed planner_delta:
-  // prefix caching is what we are testing. Keep the representation stable.
+  // A session context may be richer than the compressed planner_delta.
+  // Keep the representation stable so model prefix caching remains effective.
   const lines = [];
   if (context.scope) lines.push(`scope: ${String(context.scope).trim()}`);
 
@@ -124,7 +124,7 @@ function compileSessionContexts(contexts) {
   return blocks.join("\n\n") || "(none)";
 }
 
-// Retained for compatibility with existing files/tests.
+// Compact representation used by context selections.
 function compileContexts(contexts) {
   const blocks = [];
   for (const context of contexts) {

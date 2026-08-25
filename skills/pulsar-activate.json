@@ -5,7 +5,7 @@
   "status": "VALIDATED",
   "evidence": [
     {
-      "source": "micro-poc",
+      "source": "computer-use",
       "result": "PASS",
       "note": "Activation works once application window is available; readiness remains a driver concern."
     }
