@@ -110,7 +110,7 @@ macOS Vision remains a PoC provider, not a built-in Computer Use dependency. Aut
 
 ## P2B — provider-neutral text-region contract
 
-Status: `IMPLEMENTED`, pending physical runtime validation.
+Status: `PHYSICALLY_VALIDATED` on the reference Mac.
 
 `app/perception-provider.js` exposes:
 
@@ -130,11 +130,36 @@ Computer Use validates fail-closed that:
 
 Validated observations are normalized with `semanticIdentity = null` and `actionable = false`. A successful call returns `VISUAL_INTERPRETATION_OBSERVED`, `semanticTarget.state = "UNRESOLVED"`, and `actionPolicy.state = "NOT_EVALUATED"`.
 
+The public runtime path was physically validated in session `cu-perception-p2b-provider-contract-public-s02`, evidence commit `82ca0c0d1fb383a3102d19238cfe885cd0b8d8a4`, against Computer Use runtime `839d53d100e31da2fec839351f94f197d377ab36`. The local macOS Vision PoC was used only as a real provider oracle; the product contract itself remains provider-neutral. Authoritative evidence is recorded in `docs/evidence/perception-p2b-provider-contract-public-physical.md`.
+
 This contract does not make OCR output a semantic UI identity and does not authorize pointer or keyboard actions. VLM/object/icon observation types require their own evidence before being added to this provider boundary.
 
-## Interpretation boundary
+## P3A — deterministic visual text target resolution
 
-A visual observation is not a semantic element identity and is not proof that an action will succeed. P2 adds perception observations while deliberately keeping semantic target resolution and action policy as separate later stages.
+Status: `IMPLEMENTED`, pending physical runtime validation.
+
+`app/perception-target.js` exposes:
+
+```js
+resolveExactTextTarget(interpretationResult, query)
+```
+
+P3A deliberately begins with a narrow deterministic policy supported by the P2 evidence: a query of `{kind:"text", match:"exact", text:"..."}` may resolve one normalized `text-region` observation only when exactly one observation has the same trimmed text.
+
+The resolver is fail-closed:
+
+- zero exact matches return `VISUAL_TARGET_UNRESOLVED` / `semanticTarget.state = "UNRESOLVED"`;
+- multiple exact matches return `VISUAL_TARGET_AMBIGUOUS` / `semanticTarget.state = "AMBIGUOUS"`;
+- exactly one match returns `VISUAL_TARGET_RESOLVED` / `semanticTarget.state = "RESOLVED"`;
+- the selected region center is converted from `capture-pixel` to `primary-display-logical` only through the physically validated P1B mapping;
+- the target remains `semanticIdentity = null` and `actionable = false`;
+- `actionPolicy.state` remains `NOT_EVALUATED`.
+
+A resolved P3A target is therefore a visual target location, not a semantic UI identity and not permission to click. Broader matching, ranking, fuzzy text selection, VLM target resolution and action authorization require separate evidence.
+
+## Interpretation and target boundary
+
+A visual observation is not a semantic element identity and is not proof that an action will succeed. P2 adds perception observations. P3 begins explicit target resolution while deliberately keeping action authorization and execution separate.
 
 The preferred execution order remains:
 
@@ -146,6 +171,6 @@ The preferred execution order remains:
 
 ## Privacy and persistence
 
-Screen pixels and recognized text may contain sensitive information. P1/P2 keep frame payloads and provider observations in memory and do not themselves write screenshots, derived images, OCR text or frame payloads to disk or logs.
+Screen pixels and recognized text may contain sensitive information. P1/P2/P3 keep frame payloads, provider observations and target-resolution data in memory and do not themselves write screenshots, derived images, OCR text or frame payloads to disk or logs.
 
-Callers must not log `dataBase64`, decoded frame bytes, or recognized text as ordinary diagnostics.
+Callers must not log `dataBase64`, decoded frame bytes, recognized text, or target coordinates as ordinary diagnostics.
