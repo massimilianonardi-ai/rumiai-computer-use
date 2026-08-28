@@ -186,9 +186,9 @@ function acquireMappedPrimaryVisualFrame({captureDisplay = externalCaptureDispla
         rotationDegrees:0,
       },
       validation:{
-        state:"IMPLEMENTED",
+        state:"PHYSICALLY_VALIDATED",
         scope:"stable-unrotated-primary-display-topology",
-        method:"display-list-before-after-plus-marker-discovery",
+        method:"display-list-before-after-plus-marker-public-validation",
       },
     },
   };
