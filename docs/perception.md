@@ -50,13 +50,13 @@ A successful acquisition returns `VISUAL_FRAME_ACQUIRED` with:
 - `actionCoordinateMapping.state = "UNRESOLVED"`;
 - an explicit ephemeral/no-persistence policy.
 
-Authoritative physical evidence is recorded in `docs/evidence/perception-p1a-visual-frame-acquisition-physical.md`. The validating session acquired a real primary-display PNG through Computer Use and the external Computer Control boundary, kept interpretation disabled, kept action-coordinate mapping unresolved, did not persist the frame payload, and explicitly shut down the test-owned Computer Control runtime.
+Authoritative physical evidence is recorded in `docs/evidence/perception-p1a-visual-frame-acquisition-physical.md`.
 
 ## P1B — action-coordinate mapping
 
 Discovery status: `PHYSICALLY_OBSERVED` on the reference Mac.
 
-Product mapping status: `IMPLEMENTED` pending separate physical runtime validation.
+Product mapping status: `PHYSICALLY_VALIDATED` on the reference Mac.
 
 Capture image dimensions are image-pixel dimensions. Computer Control pointer APIs use primary-display-local logical coordinates. P1A therefore continues to leave `actionCoordinateMapping.state = "UNRESOLVED"`.
 
@@ -93,6 +93,8 @@ mapCapturePointToPrimaryLogical(mapping, point)
 6. derivation of both pixel→logical and logical→pixel scales from the observed dimensions.
 
 A successful mapped acquisition returns `VISUAL_FRAME_MAPPED` and `actionCoordinateMapping.state = "RESOLVED"`. The mapping contains no native display identifier and does not perform an input action.
+
+The public runtime path was independently validated in session `cu-perception-p1b-mapped-frame-public-s02` with evidence commit `09692cd9b16eb36a10bb0ee294162b901afcfd17`. The validated runtime SHA is `29c269864def0a26d3254e913d2a5a87f6125103`. Two test-owned marker centers were detected in capture pixels and converted by the product-owned mapper to independently known logical centers; no pointer or keyboard action was performed.
 
 The initial validated scope is deliberately narrow: one stable, unrotated primary display. Secondary displays and rotated topologies require separate evidence.
 
