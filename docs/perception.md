@@ -54,17 +54,47 @@ Authoritative physical evidence is recorded in `docs/evidence/perception-p1a-vis
 
 ## P1B — action-coordinate mapping
 
-Status: `PENDING_PHYSICAL_DISCOVERY`.
+Discovery status: `PHYSICALLY_OBSERVED` on the reference Mac.
 
-Capture image dimensions are image-pixel dimensions. Computer Control pointer APIs use primary-display-local logical coordinates.
+Product mapping status: `IMPLEMENTED` pending separate physical runtime validation.
 
-P1A **does not assume these coordinate spaces are identical**, even when they happen to have equal numeric dimensions on the current reference Mac.
+Capture image dimensions are image-pixel dimensions. Computer Control pointer APIs use primary-display-local logical coordinates. P1A therefore continues to leave `actionCoordinateMapping.state = "UNRESOLVED"`.
 
-Therefore an OCR/VLM/detector result expressed in capture pixels is not directly executable by `pointer.move`, `pointer.click`, `pointer.drag` or `pointer.wheel`.
+The P1B discovery used two independently positioned, noninteractive AppKit marker windows and located both markers in a real captured PNG. It physically established for the tested stable, unrotated primary-display topology that:
 
-P1B must first physically establish the mapping for the current primary-display topology. The discovery must compare a visual marker observed in the captured PNG with independently known logical display geometry; equality of capture and display dimensions alone is not sufficient evidence.
+- capture row zero and Computer Control logical coordinates both use a top-left origin for this mapping boundary;
+- the transform is axis-aligned;
+- `pixelToLogical.x = logicalWidth / pixelWidth`;
+- `pixelToLogical.y = logicalHeight / pixelHeight`;
+- the inverse uses `pixelWidth / logicalWidth` and `pixelHeight / logicalHeight`;
+- the mapping must be derived from observations, not inferred from equal dimensions;
+- display geometry must remain stable across the capture.
 
-No public mapping contract is frozen until that discovery passes.
+On the reference Mac both observed spaces were `1710 × 1107`, so the measured scale happened to be 1:1. Identity is not encoded as an assumption.
+
+Authoritative discovery evidence is recorded in `docs/evidence/perception-p1b-coordinate-mapping-discovery-physical.md`.
+
+### Mapped acquisition contract
+
+`app/perception.js` additionally exposes:
+
+```js
+acquireMappedPrimaryVisualFrame()
+mapCapturePointToPrimaryLogical(mapping, point)
+```
+
+`acquireMappedPrimaryVisualFrame()` performs:
+
+1. `display.list` and exact selection of one active/online primary display;
+2. rejection of rotated primary displays in the initial contract;
+3. P1A `display.capture` acquisition;
+4. a second `display.list` observation;
+5. fail-closed rejection if primary geometry, scale or rotation changed;
+6. derivation of both pixel→logical and logical→pixel scales from the observed dimensions.
+
+A successful mapped acquisition returns `VISUAL_FRAME_MAPPED` and `actionCoordinateMapping.state = "RESOLVED"`. The mapping contains no native display identifier and does not perform an input action.
+
+The initial validated scope is deliberately narrow: one stable, unrotated primary display. Secondary displays and rotated topologies require separate evidence.
 
 ## Interpretation boundary
 
@@ -81,6 +111,6 @@ The preferred execution order remains:
 
 ## Privacy and persistence
 
-Screen pixels may contain sensitive information. P1A keeps the PNG payload in memory and does not itself write screenshots, derived images, OCR text or frame payloads to disk or logs.
+Screen pixels may contain sensitive information. P1A/P1B keep the PNG payload in memory and do not themselves write screenshots, derived images, OCR text or frame payloads to disk or logs.
 
 Callers must not log `dataBase64` or decoded frame bytes as ordinary diagnostics.
