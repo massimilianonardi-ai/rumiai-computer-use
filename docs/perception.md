@@ -136,7 +136,7 @@ This contract does not make OCR output a semantic UI identity and does not autho
 
 ## P3A — deterministic visual text target resolution
 
-Status: `IMPLEMENTED`, pending physical runtime validation.
+Status: `PHYSICALLY_VALIDATED` on the reference Mac.
 
 `app/perception-target.js` exposes:
 
@@ -155,22 +155,48 @@ The resolver is fail-closed:
 - the target remains `semanticIdentity = null` and `actionable = false`;
 - `actionPolicy.state` remains `NOT_EVALUATED`.
 
-A resolved P3A target is therefore a visual target location, not a semantic UI identity and not permission to click. Broader matching, ranking, fuzzy text selection, VLM target resolution and action authorization require separate evidence.
+The public runtime path was physically validated in session `cu-perception-p3a-target-resolution-public-s01`, evidence commit `c2a1e704f99b5cf528fb15287a785875c454a400`, against Computer Use runtime `32a49d08bd235e906b992e093e2184144f76136c`. The resolved logical point independently fell inside the expected test-owned fixture window. Authoritative evidence is recorded in `docs/evidence/perception-p3a-target-resolution-public-physical.md`.
 
-## Interpretation and target boundary
+A resolved P3A target is therefore a visual target location, not a semantic UI identity and not permission to click. Broader matching, ranking, fuzzy text selection and VLM target resolution require separate evidence.
 
-A visual observation is not a semantic element identity and is not proof that an action will succeed. P2 adds perception observations. P3 begins explicit target resolution while deliberately keeping action authorization and execution separate.
+## P3B — explicit visual fallback action-policy gate
+
+Status: `IMPLEMENTED`, pending physical runtime validation.
+
+`app/perception-action-policy.js` exposes:
+
+```js
+evaluateVisualFallbackPolicy(targetResult, request, policy)
+```
+
+The initial policy is intentionally narrow. It can authorize only a left pointer click on the primary display, and only as a plan, when all of the following hold:
+
+- P3A produced one `VISUAL_TARGET_RESOLVED` target through `exact-text-single-match`;
+- the target still has `semanticIdentity = null` and is not intrinsically actionable;
+- the target logical point is in `primary-display-logical` / top-left coordinates;
+- the P1B mapping remains `PHYSICALLY_VALIDATED`;
+- the caller explicitly requests `{kind:"pointer-click", button:"left", display:"primary"}`;
+- policy explicitly sets `allowVisualFallback = true`.
+
+If any precondition is not met, P3B returns `VISUAL_FALLBACK_REJECTED` with `actionPolicy.state = "REJECTED"` and no action plan. A successful policy evaluation returns `VISUAL_FALLBACK_AUTHORIZED`, `actionPolicy.state = "AUTHORIZED"`, and an `actionPlan.state = "READY"` containing the already mapped logical point.
+
+P3B does not import Computer Control and performs no input action. Even an authorized plan reports `delivery.state = "NOT_ATTEMPTED"` and `semanticConsequence.state = "NOT_OBSERVED"`. Authorization is therefore neither event delivery nor task success.
+
+## Interpretation, target and action-policy boundary
+
+A visual observation is not a semantic element identity and is not proof that an action will succeed. P2 adds perception observations. P3 resolves a target and evaluates whether an explicit low-level fallback may be planned, while keeping execution and postcondition verification separate.
 
 The preferred execution order remains:
 
 1. use structured semantic Computer Control observation/action when available;
 2. use visual perception to propose observations only when structured semantics are insufficient;
 3. resolve an observation to a target through an explicit policy boundary;
-4. use an explicit low-level Computer Control fallback only after target/mapping policy accepts it;
-5. re-observe an appropriate postcondition instead of treating event delivery as task success.
+4. authorize an explicit low-level fallback only after target/mapping policy accepts it;
+5. execute through Computer Control in a separate stage;
+6. re-observe an appropriate postcondition instead of treating event delivery as task success.
 
 ## Privacy and persistence
 
-Screen pixels and recognized text may contain sensitive information. P1/P2/P3 keep frame payloads, provider observations and target-resolution data in memory and do not themselves write screenshots, derived images, OCR text or frame payloads to disk or logs.
+Screen pixels and recognized text may contain sensitive information. P1/P2/P3 keep frame payloads, provider observations, target-resolution data and action-policy plans in memory and do not themselves write screenshots, derived images, OCR text or frame payloads to disk or logs.
 
-Callers must not log `dataBase64`, decoded frame bytes, recognized text, or target coordinates as ordinary diagnostics.
+Callers must not log `dataBase64`, decoded frame bytes, recognized text, target coordinates, or action-plan coordinates as ordinary diagnostics.
