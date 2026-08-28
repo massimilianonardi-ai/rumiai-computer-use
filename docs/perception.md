@@ -24,6 +24,8 @@ postcondition / re-observation
 
 ## P1A — visual frame acquisition
 
+Status: `PHYSICALLY_VALIDATED` on the reference Mac.
+
 `app/perception.js` exposes:
 
 ```js
@@ -48,7 +50,11 @@ A successful acquisition returns `VISUAL_FRAME_ACQUIRED` with:
 - `actionCoordinateMapping.state = "UNRESOLVED"`;
 - an explicit ephemeral/no-persistence policy.
 
-## Critical coordinate boundary
+Authoritative physical evidence is recorded in `docs/evidence/perception-p1a-visual-frame-acquisition-physical.md`. The validating session acquired a real primary-display PNG through Computer Use and the external Computer Control boundary, kept interpretation disabled, kept action-coordinate mapping unresolved, did not persist the frame payload, and explicitly shut down the test-owned Computer Control runtime.
+
+## P1B — action-coordinate mapping
+
+Status: `PENDING_PHYSICAL_DISCOVERY`.
 
 Capture image dimensions are image-pixel dimensions. Computer Control pointer APIs use primary-display-local logical coordinates.
 
@@ -56,11 +62,13 @@ P1A **does not assume these coordinate spaces are identical**, even when they ha
 
 Therefore an OCR/VLM/detector result expressed in capture pixels is not directly executable by `pointer.move`, `pointer.click`, `pointer.drag` or `pointer.wheel`.
 
-A later physically validated mapping/calibration step must establish how a capture-pixel point becomes a Computer Control action point for a given observation/topology.
+P1B must first physically establish the mapping for the current primary-display topology. The discovery must compare a visual marker observed in the captured PNG with independently known logical display geometry; equality of capture and display dimensions alone is not sufficient evidence.
+
+No public mapping contract is frozen until that discovery passes.
 
 ## Interpretation boundary
 
-P1A performs no OCR, object detection, icon recognition, target ranking or semantic inference.
+P1A/P1B perform no OCR, object detection, icon recognition, target ranking or semantic inference.
 
 A future perception provider may return candidate observations, but a candidate is not a semantic element identity and is not proof that an action will succeed.
 
