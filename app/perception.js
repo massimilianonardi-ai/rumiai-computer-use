@@ -1,8 +1,10 @@
 "use strict";
 
-const computerControl = require("./computer-control-external");
-
 const PNG_SIGNATURE = Buffer.from([0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a]);
+
+function externalCaptureDisplay(params) {
+  return require("./computer-control-external").captureDisplay(params);
+}
 
 function failureFromCapture(capture) {
   return {
@@ -35,10 +37,10 @@ function validateCapturedPng(capture) {
     return {ok:false, error:"VISUAL_FRAME_INVALID_PNG_SIGNATURE"};
   }
 
-  return {ok:true, bytes};
+  return {ok:true};
 }
 
-function acquirePrimaryVisualFrame({captureDisplay = computerControl.captureDisplay} = {}) {
+function acquirePrimaryVisualFrame({captureDisplay = externalCaptureDisplay} = {}) {
   if (typeof captureDisplay !== "function") {
     return {ok:false, state:"FAILED", error:"VISUAL_FRAME_CAPTURE_PROVIDER_MISSING", recoveryPolicy:"NONE"};
   }
