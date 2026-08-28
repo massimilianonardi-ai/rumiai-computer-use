@@ -161,7 +161,7 @@ A resolved P3A target is therefore a visual target location, not a semantic UI i
 
 ## P3B — explicit visual fallback action-policy gate
 
-Status: `IMPLEMENTED`, pending physical runtime validation.
+Status: `PHYSICALLY_VALIDATED` on the reference Mac.
 
 `app/perception-action-policy.js` exposes:
 
@@ -180,11 +180,40 @@ The initial policy is intentionally narrow. It can authorize only a left pointer
 
 If any precondition is not met, P3B returns `VISUAL_FALLBACK_REJECTED` with `actionPolicy.state = "REJECTED"` and no action plan. A successful policy evaluation returns `VISUAL_FALLBACK_AUTHORIZED`, `actionPolicy.state = "AUTHORIZED"`, and an `actionPlan.state = "READY"` containing the already mapped logical point.
 
+The public policy path was physically validated in session `cu-perception-p3b-action-policy-public-s01`, evidence commit `3ba45950619a9e3cf9249b830609e7ca9ccd9faf`, against Computer Use runtime `a8f85143ae77ba79e4fb47a0931697714df908b6`. The same physical run validated both the explicit-consent authorization path and the no-consent rejection path while performing no input action. Authoritative evidence is recorded in `docs/evidence/perception-p3b-action-policy-public-physical.md`.
+
 P3B does not import Computer Control and performs no input action. Even an authorized plan reports `delivery.state = "NOT_ATTEMPTED"` and `semanticConsequence.state = "NOT_OBSERVED"`. Authorization is therefore neither event delivery nor task success.
 
-## Interpretation, target and action-policy boundary
+## P4 — visual fallback execution with independent postcondition
 
-A visual observation is not a semantic element identity and is not proof that an action will succeed. P2 adds perception observations. P3 resolves a target and evaluates whether an explicit low-level fallback may be planned, while keeping execution and postcondition verification separate.
+Status: `IMPLEMENTED`, pending physical runtime validation.
+
+`app/perception-action-execution.js` exposes:
+
+```js
+executeAuthorizedVisualClickAndVerify(policyResult, {
+  clickPointer,
+  observeAfterDelivery,
+  postcondition
+})
+```
+
+The default click executor is the external Computer Control `clickPointer()` public API. The initial P4 contract accepts only the exact P3B `AUTHORIZED / READY` primary-display left-click plan and requires an exact-text postcondition plus a post-action observation callback.
+
+P4 preserves the delivery/success distinction explicitly:
+
+- Computer Control must return the validated low-level `CLICK_POSTED` boundary with `positionVerified = true`, `buttonDelivery = "POSTED"`, and `semanticConsequenceVerified = false`;
+- a failed or noncanonical click delivery never triggers post-action observation;
+- after posted delivery, and only then, `observeAfterDelivery()` is invoked;
+- the post-action interpretation is resolved independently through the same P3A exact-text-single-match boundary;
+- posted delivery without the postcondition returns `NOT_VERIFIED_SUCCESS`;
+- `VERIFIED_SUCCESS` is possible only when the new post-action observation independently satisfies the exact postcondition.
+
+The executor does not treat `CLICK_POSTED` as semantic success, does not persist screen data, and does not broaden the action vocabulary beyond the physically validated P3B plan. P4 physical validation uses a test-owned nonactivating AppKit fixture whose visual text changes only after receiving the click; verification is performed through a new capture and OCR observation rather than a fixture-internal success flag.
+
+## Interpretation, target, policy, execution and verification boundary
+
+A visual observation is not a semantic element identity and is not proof that an action will succeed. P2 adds perception observations. P3 resolves a target and evaluates whether an explicit low-level fallback may be planned. P4 is the first stage allowed to execute that plan, but success remains contingent on a separate post-action observation.
 
 The preferred execution order remains:
 
@@ -193,10 +222,11 @@ The preferred execution order remains:
 3. resolve an observation to a target through an explicit policy boundary;
 4. authorize an explicit low-level fallback only after target/mapping policy accepts it;
 5. execute through Computer Control in a separate stage;
-6. re-observe an appropriate postcondition instead of treating event delivery as task success.
+6. re-observe an appropriate postcondition;
+7. claim verified success only from that independent post-action observation, never from event delivery alone.
 
 ## Privacy and persistence
 
-Screen pixels and recognized text may contain sensitive information. P1/P2/P3 keep frame payloads, provider observations, target-resolution data and action-policy plans in memory and do not themselves write screenshots, derived images, OCR text or frame payloads to disk or logs.
+Screen pixels and recognized text may contain sensitive information. P1/P2/P3/P4 keep frame payloads, provider observations, target-resolution data, action-policy plans and postcondition evaluation in memory and do not themselves write screenshots, derived images, OCR text or frame payloads to disk or logs.
 
-Callers must not log `dataBase64`, decoded frame bytes, recognized text, target coordinates, or action-plan coordinates as ordinary diagnostics.
+Callers must not log `dataBase64`, decoded frame bytes, recognized text, target coordinates, action-plan coordinates, or postcondition coordinates as ordinary diagnostics.
