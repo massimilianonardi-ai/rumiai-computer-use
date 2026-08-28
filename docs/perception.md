@@ -9,7 +9,7 @@ Computer Control display.capture
         ↓
 Computer Use visual frame
         ↓
-interpretation provider (future OCR / VLM / detector)
+interpretation provider (OCR / VLM / detector)
         ↓
 target candidate
         ↓
@@ -98,21 +98,54 @@ The public runtime path was independently validated in session `cu-perception-p1
 
 The initial validated scope is deliberately narrow: one stable, unrotated primary display. Secondary displays and rotated topologies require separate evidence.
 
+## P2A — local OCR provider discovery
+
+Status: `PHYSICALLY_OBSERVED` on the reference Mac.
+
+Session `cu-perception-p2a-local-ocr-discovery-s02`, evidence commit `9bf876dd35190776b9276d1e98db9e16733b5c50`, established the first interpretation-provider evidence. A PoC-only macOS Vision provider recognized two fixed test-owned strings from the real P1B PNG and returned localized text observations. The bounding regions were converted to `capture-pixel` / top-left coordinates and their centers mapped through P1B into independently known fixture windows.
+
+The provider was local, used no external account or network API, received image bytes in memory, and did not persist or log frame payloads, recognized text or coordinates. It performed no input action.
+
+macOS Vision remains a PoC provider, not a built-in Computer Use dependency. Authoritative evidence is recorded in `docs/evidence/perception-p2a-local-ocr-discovery-physical.md`.
+
+## P2B — provider-neutral text-region contract
+
+Status: `IMPLEMENTED`, pending physical runtime validation.
+
+`app/perception-provider.js` exposes:
+
+```js
+interpretMappedVisualFrame(mappedFrame, provider)
+```
+
+The first provider-neutral capability is deliberately evidence-bounded to `text-region`. A provider declares an `id`, `locality`, `capabilities` containing `text-region`, and an `observe(frame)` function. The provider receives a mapped PNG frame in memory and returns observations in the frame's exact `capture-pixel` / top-left coordinate space.
+
+Computer Use validates fail-closed that:
+
+- the input is a P1B mapped frame whose mapping is `PHYSICALLY_VALIDATED`;
+- provider identity, locality and capability declaration are explicit;
+- provider frame geometry exactly matches the captured frame;
+- each observation is `text-region`, has non-empty text and confidence in `[0,1]`;
+- each region is finite, positive, in bounds, and explicitly `capture-pixel` / top-left.
+
+Validated observations are normalized with `semanticIdentity = null` and `actionable = false`. A successful call returns `VISUAL_INTERPRETATION_OBSERVED`, `semanticTarget.state = "UNRESOLVED"`, and `actionPolicy.state = "NOT_EVALUATED"`.
+
+This contract does not make OCR output a semantic UI identity and does not authorize pointer or keyboard actions. VLM/object/icon observation types require their own evidence before being added to this provider boundary.
+
 ## Interpretation boundary
 
-P1A/P1B perform no OCR, object detection, icon recognition, target ranking or semantic inference.
-
-A future perception provider may return candidate observations, but a candidate is not a semantic element identity and is not proof that an action will succeed.
+A visual observation is not a semantic element identity and is not proof that an action will succeed. P2 adds perception observations while deliberately keeping semantic target resolution and action policy as separate later stages.
 
 The preferred execution order remains:
 
 1. use structured semantic Computer Control observation/action when available;
-2. use visual perception to propose a target only when structured semantics are insufficient;
-3. use an explicit low-level Computer Control fallback only after target/mapping policy accepts it;
-4. re-observe an appropriate postcondition instead of treating event delivery as task success.
+2. use visual perception to propose observations only when structured semantics are insufficient;
+3. resolve an observation to a target through an explicit policy boundary;
+4. use an explicit low-level Computer Control fallback only after target/mapping policy accepts it;
+5. re-observe an appropriate postcondition instead of treating event delivery as task success.
 
 ## Privacy and persistence
 
-Screen pixels may contain sensitive information. P1A/P1B keep the PNG payload in memory and do not themselves write screenshots, derived images, OCR text or frame payloads to disk or logs.
+Screen pixels and recognized text may contain sensitive information. P1/P2 keep frame payloads and provider observations in memory and do not themselves write screenshots, derived images, OCR text or frame payloads to disk or logs.
 
-Callers must not log `dataBase64` or decoded frame bytes as ordinary diagnostics.
+Callers must not log `dataBase64`, decoded frame bytes, or recognized text as ordinary diagnostics.
