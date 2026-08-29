@@ -9,6 +9,17 @@ const CONTRACT_DIR=process.env.RUMIAI_VISUAL_FALLBACK_CONTRACT_DIR || path.join(
 function normalizeText(value){return String(value||"").trim();}
 function normalizeApplication(value){return normalizeText(value).toLowerCase();}
 
+function normalizeSurfacePrecondition(raw){
+  if(raw==null)return null;
+  if(!raw||typeof raw!=="object"||Array.isArray(raw))return undefined;
+  const kind=normalizeText(raw.kind);
+  const match=normalizeText(raw.match);
+  const text=normalizeText(raw.text);
+  const role=normalizeText(raw.role);
+  if(kind!=="semantic-text"||match!=="exact"||!text)return undefined;
+  return Object.freeze({kind:"semantic-text",match:"exact",text,...(role?{role}:{})});
+}
+
 function normalizeContract(raw,source="unknown"){
   if(!raw||typeof raw!=="object"||Array.isArray(raw))return null;
   const id=normalizeText(raw.id);
@@ -17,7 +28,9 @@ function normalizeContract(raw,source="unknown"){
   const target=normalizeText(raw.target);
   const postcondition=normalizeText(raw.postcondition);
   const scopeId=normalizeText(raw.scopeId);
+  const surfacePrecondition=normalizeSurfacePrecondition(raw.surfacePrecondition);
   if(!id||!application||intent!=="OPEN"||!target||!postcondition)return null;
+  if(raw.surfacePrecondition!=null&&surfacePrecondition===undefined)return null;
 
   const providerRequest=raw.providerRequest&&typeof raw.providerRequest==="object"
     ? raw.providerRequest
@@ -36,6 +49,7 @@ function normalizeContract(raw,source="unknown"){
     target,
     postcondition,
     ...(scopeId?{scopeId}:{}),
+    ...(surfacePrecondition?{surfacePrecondition}:{}),
     providerRequest:Object.freeze({
       capabilities:Object.freeze(capabilities),
       locality,
@@ -57,7 +71,7 @@ function loadVisualFallbackContracts(options={}){
       try{parsed=JSON.parse(fs.readFileSync(full,"utf8"));}
       catch(error){throw new Error(`Invalid visual fallback contract ${name}: ${error.message}`);}
       const normalized=normalizeContract(parsed,name);
-      if(!normalized)throw new Error(`Invalid visual fallback contract ${name}: id, application, OPEN target and postcondition are required`);
+      if(!normalized)throw new Error(`Invalid visual fallback contract ${name}: contract shape is not supported`);
       return normalized;
     });
 }
@@ -69,6 +83,7 @@ function contractToExecutionContract(contract){
     actionRequest:{kind:"pointer-click",button:"left",display:"primary"},
     policy:{allowVisualFallback:true},
     postcondition:{kind:"text",match:"exact",text:contract.postcondition},
+    ...(contract.surfacePrecondition?{surfacePrecondition:{...contract.surfacePrecondition}}:{}),
     providerRequest:{
       capabilities:[...contract.providerRequest.capabilities],
       locality:contract.providerRequest.locality,
@@ -133,6 +148,7 @@ function selectVisualFallbackCallerContract(intent,state={},options={}){
       application:matches[0].application,
       target:matches[0].target,
       ...(matches[0].scopeId?{scopeId:matches[0].scopeId}:{}),
+      ...(matches[0].surfacePrecondition?{surfacePreconditionKind:matches[0].surfacePrecondition.kind}:{}),
       source:matches[0].source,
     },
   };
@@ -197,6 +213,7 @@ function selectScopedVisualFallbackContractsForPlan(plan,options={}){
 
 module.exports={
   CONTRACT_DIR,
+  normalizeSurfacePrecondition,
   normalizeContract,
   loadVisualFallbackContracts,
   contractToExecutionContract,
