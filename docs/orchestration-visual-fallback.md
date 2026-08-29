@@ -1,6 +1,6 @@
 # Visual fallback orchestration
 
-Status: **P5 COMPLETE for the initial narrow scope; P6A PHYSICALLY_VALIDATED; P6B PHYSICALLY_OBSERVED; P6C ACTIVE**.
+Status: **P5 COMPLETE for the initial narrow scope; P6A PHYSICALLY_VALIDATED; P6B PHYSICALLY_OBSERVED; P6C PHYSICALLY_VALIDATED; P6D ACTIVE**.
 
 Validated/observed states:
 
@@ -12,6 +12,7 @@ Validated/observed states:
 - P5E: `PHYSICALLY_VALIDATED`
 - P6A: `PHYSICALLY_VALIDATED`
 - P6B: `PHYSICALLY_OBSERVED`
+- P6C: `PHYSICALLY_VALIDATED`
 
 Detailed perception/action contracts are in `docs/perception.md`; operational resume state is in `docs/handoff.md`.
 
@@ -20,8 +21,8 @@ Detailed perception/action contracts are in `docs/perception.md`; operational re
 - Semantic-first: visual perception is not run merely because it exists.
 - A successful semantic operation is never replaced by a coordinate click.
 - Only explicit structured semantic observability/resolution gaps may be visually eligible.
-- Planner output remains semantic and contains no screen coordinates, native IDs, provider identity or fabricated success criteria.
-- Visual fallback requires deterministic caller/skill target + postcondition and explicit authorization.
+- Planner output remains semantic and contains no screen coordinates, native IDs, provider identity, scope identity or fabricated success criteria.
+- Visual fallback requires deterministic caller-owned target + postcondition and explicit authorization.
 - Computer Use owns perception interpretation, provider selection, policy and success verification.
 - Computer Control owns observation/action delivery mechanics and remains perception-provider-free.
 - `CLICK_POSTED` is delivery only.
@@ -60,15 +61,15 @@ The normal agent loop plan remained semantic (`ACTIVATE_APP`, `OPEN`), provider 
 
 Status: `PHYSICALLY_VALIDATED`.
 
-`app/visual-fallback-contract-manager.js` adds a local registry for deterministic caller-owned visual execution knowledge. It is separate from competence skills and from perception-provider selection.
+`app/visual-fallback-contract-manager.js` provides local deterministic caller-owned visual execution knowledge, separate from competence skills and perception-provider selection.
 
-A contract is selected only when exactly one registry entry matches:
+The original P6A registry lookup is exact on:
 
 ```text
 application + OPEN + exact target
 ```
 
-The selected execution contract carries exact target, exact postcondition, explicit visual-fallback authorization, the already validated primary-display left-click request and declarative provider requirements. It carries no concrete provider object, action coordinates or native identity.
+The selected execution contract contains exact target/postcondition, explicit visual-fallback policy, the validated primary-display left-click shape and declarative provider requirements. It contains no provider object, coordinates or native identity.
 
 Authoritative validation:
 
@@ -86,52 +87,75 @@ See `docs/evidence/perception-p6a-caller-contract-registry-public-physical.md`.
 
 Status: `PHYSICALLY_OBSERVED`.
 
-Safari was used as the first real supported application surface. A loopback-only test-owned page rendered a deterministic target exclusively into an HTML canvas and replaced it with a deterministic postcondition only after a pointer click.
+Safari was the first real supported application surface. A loopback-only test-owned page rendered an exact target exclusively into a canvas and replaced it with an exact postcondition only after a pointer click.
 
 Authoritative session:
 
 - session: `cu-perception-p6b-safari-canvas-discovery-public-s06`
 - evidence: `e8a2899c58c5e6d3725d4457af18aefc25923580`
-- Computer Use expected/observed: `3a3148cdf89735d2d46d208bbe69dc1d26722e3b`
-- Computer Control expected/observed: `e3a3f13d66546cf8f0fca50075bd4607c2c3d003`
+- Computer Use: `3a3148cdf89735d2d46d208bbe69dc1d26722e3b`
+- Computer Control: `e3a3f13d66546cf8f0fca50075bd4607c2c3d003`
 - frozen test source: `6d826092b93973905fa6f2c7f8ac1c1d68a92a31`
 - tested PoC: `0ae7c087bf0072aac0c5f0d180b8d83933022a3c`
 - result: 10 PASS / 0 FAIL / 0 BLOCKED
 
-Physical evidence proved:
+P6B proved that Safari really loaded the controlled page, the canvas text produced `NO_SEMANTIC_TARGET`, local Vision resolved exactly one target, Computer Control returned `CLICK_POSTED`, and only fresh independent post-action perception produced `VERIFIED_SUCCESS`.
 
-1. Safari actually requested and rendered the loopback page before perception (`requests=1`);
-2. a fresh semantic snapshot yielded structured `NO_SEMANTIC_TARGET` for the canvas text;
-3. the product-owned local macOS Vision provider resolved exactly one target using the existing exact-text-single-match policy;
-4. the deterministic postcondition was absent before delivery;
-5. real Computer Control returned `CLICK_POSTED` with no claimed semantic consequence;
-6. only a fresh independent post-action visual observation produced `VERIFIED_SUCCESS`;
-7. screenshots, OCR payloads and coordinates were not logged;
-8. pointer, Safari, loopback server, runtime/cache and temporary resources were cleaned up and product trees remained clean.
-
-Historical s01–s05 failures remain immutable. They progressively isolated PoC oracle and local-page bootstrap defects; no P1–P6A product contract was weakened to obtain the PASS.
+Historical s01–s05 failures remain immutable and document PoC oracle/bootstrap defects; no product contract was weakened to obtain the PASS.
 
 See `docs/evidence/perception-p6b-safari-canvas-discovery-public-physical.md`.
 
-P6B is observation, not product authorization. It does **not** enable generic Safari visual fallback and does not ship a built-in Safari contract.
+P6B is observation, not generic Safari authorization.
 
-## P6C — bounded evidence-backed caller integration
+## P6C — scoped caller integration
+
+Status: `PHYSICALLY_VALIDATED`.
+
+P6C extends caller-contract knowledge with an explicit `scopeId` and a plan-aware selector. Scoped contracts are selected only when the caller explicitly supplies the matching scope; legacy unscoped lookup cannot accidentally select them.
+
+The bounded lookup is effectively:
+
+```text
+scopeId + application + OPEN + exact target
+```
+
+The plan-aware helper follows semantic `ACTIVATE_APP` context, deduplicates repeated use of the same contract, and fails closed if the same planner target would map to different application contracts. It does not select a perception provider and does not introduce planner coordinates or success criteria.
+
+Authoritative validation:
+
+- session: `cu-perception-p6c-scoped-caller-integration-public-s01`
+- evidence: `c66eb5ba69d9e0435cb894731b1d1cea832c31e1`
+- Computer Use runtime: `a1bdddc813a89a16552b08ccec6b3aec00eb3157`
+- Computer Control: `e3a3f13d66546cf8f0fca50075bd4607c2c3d003`
+- frozen test source: `740be2179de17dd9e790f3c92025bb8c01376b16`
+- tested PoC: `e2e246b335ebecf65e2e1445d7c9e18ac71d49d5`
+- result: 11 PASS / 0 FAIL / 0 BLOCKED
+
+The physical run reused the evidence-backed P6B Safari surface through normal `runTask`. It proved wrong-scope fail-closed behavior, semantic-only planner output, semantic `NO_SEMANTIC_TARGET` first, lazy local Vision selection, `CLICK_POSTED` delivery, and independent `VERIFIED_SUCCESS`.
+
+See `docs/evidence/perception-p6c-scoped-caller-integration-public-physical.md`.
+
+The P6C `PROCEED → FINISHED` contract remains test-owned. It is not shipped as generic Safari knowledge.
+
+## P6D — runtime surface precondition
 
 Status: `ACTIVE`.
 
-The next checkpoint may add product caller knowledge only where the scope is explicitly bounded to an evidence-backed application/task contract. P6C must not infer generic Safari/web behavior from P6B.
+P6C proves which caller scope owns a contract, but `scopeId` alone is not evidence that the currently active application surface is the one that contract was designed for. Before shipping reusable real-application knowledge, the runtime must fail closed unless a deterministic surface precondition is satisfied.
 
-Requirements:
+P6D must establish a contract boundary in which:
 
-- caller/registry knowledge remains outside the planner;
-- selection remains exact and fail-closed;
-- no coordinates or provider objects in the stored contract;
-- the semantic path still runs first;
-- perception-provider selection remains lazy and Computer Use-owned;
-- only P5B-eligible semantic gaps may reach P5A;
+- surface identity/precondition remains outside planner output;
+- a contract cannot run merely because application, scope and target text happen to match;
+- the surface precondition is checked before provider selection/action delivery;
+- failure or ambiguity prevents visual fallback with no click;
+- semantic-first and P5B eligibility remain unchanged;
+- provider selection remains lazy and Computer Use-owned;
 - `CLICK_POSTED` remains delivery only;
-- success still requires independent post-action evidence;
-- the built-in contract scope must be no broader than the semantics physically demonstrated in P6B.
+- post-action success still requires independent evidence;
+- no generic Safari/page inference is introduced.
+
+The first P6D physical proof should reuse the controlled Safari surface and demonstrate both a positive surface match and a negative/mismatched-surface fail-closed case before any action.
 
 ## Deferred hardening
 
@@ -145,4 +169,4 @@ Still separate evidence programs:
 - richer pointer/keyboard gestures;
 - richer postconditions/recovery.
 
-Immediate next checkpoint: **P6C bounded evidence-backed caller-contract integration**.
+Immediate next checkpoint: **P6D runtime surface precondition**.
