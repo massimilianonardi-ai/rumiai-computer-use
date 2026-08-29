@@ -31,6 +31,9 @@ const { createContextSession, contextSummary } = require("./context-manager");
 const { selectCapabilityTool } = require("./capability-manager");
 const { executeIntent, executeActivateIntent } = require("./executors");
 const {
+  createLazyOpenVisualFallbackExecutionContext,
+} = require("./visual-fallback-execution-context");
+const {
   strongBlockerEvidence,
   locateOrdinalResult,
   decideRecovery,
@@ -51,12 +54,66 @@ let computerControlCleanupDone = false;
 
 fs.mkdirSync(WORKSPACE, { recursive: true });
 
-async function runTask(task) {
+function visualFallbackContractForIntent(intent, contracts) {
+  if (intent?.intent !== "OPEN" || !Array.isArray(contracts)) return null;
+  const target = String(intent.target || "").trim();
+  const matches = contracts.filter(contract =>
+    (contract?.intent == null || contract.intent === "OPEN") &&
+    String(contract?.targetQuery?.text || "").trim() === target
+  );
+  return matches.length === 1 ? matches[0] : null;
+}
+
+function summarizeIntentResult(intent, result) {
+  const summary = {
+    id:intent?.id ?? null,
+    intent:intent?.intent || null,
+    ...(intent?.target ? {target:String(intent.target)} : {}),
+    ok:result?.ok === true,
+    executionPath:result?.executionPath || "semantic",
+  };
+
+  if (result?.visualFallbackEligibility) {
+    summary.visualFallbackEligibility = {
+      code:result.visualFallbackEligibility.code || null,
+      eligible:result.visualFallbackEligibility.eligible === true,
+    };
+  }
+
+  if (result?.visualFallbackProviderSelection) {
+    summary.visualFallbackProviderSelection = result.visualFallbackProviderSelection;
+  }
+
+  if (result?.delivery) {
+    summary.delivery = {
+      state:result.delivery.state || null,
+      controlState:result.delivery.controlState || null,
+      semanticConsequenceVerified:result.delivery.semanticConsequenceVerified === true,
+    };
+  }
+
+  if (result?.taskOutcome) {
+    summary.taskOutcome = {
+      state:result.taskOutcome.state || null,
+      basis:result.taskOutcome.basis || null,
+    };
+  }
+
+  return summary;
+}
+
+async function runTask(task, options = {}) {
   console.log("");
   console.log(`TASK: ${task}`);
   console.log(`MODEL: ${MODEL}`);
   console.log(`MODE: context-select -> semantic-plan -> deterministic executors -> classified recovery/locator`);
-  const mode = executionMode(task);
+  const modeFn = typeof options.executionMode === "function"
+    ? options.executionMode
+    : executionMode;
+  const planTaskFn = typeof options.planTask === "function"
+    ? options.planTask
+    : planTask;
+  const mode = modeFn(task);
   console.log(`[execution-mode] ${mode}`);
   console.log("");
 
@@ -94,7 +151,7 @@ async function runTask(task) {
     capabilitySelection = selectCapabilityTool(task, mode);
   } catch (e) {
     console.log(`[capability] ERROR: ${e.message}`);
-    return;
+    return {ok:false, error:`capability selection failed: ${e.message}`};
   }
 
   if (capabilitySelection.required.length) {
@@ -133,7 +190,7 @@ async function runTask(task) {
     contextSelection.capability = capabilitySelection;
   } catch (e) {
     console.log(`[context] ERROR: ${e.message}`);
-    return;
+    return {ok:false, error:`context selection failed: ${e.message}`};
   }
 
   console.log(`[context] planner: ${contextSummary(contextSelection)}`);
@@ -153,10 +210,10 @@ async function runTask(task) {
 
   let planned;
   try {
-    planned = await planTask(task, contextSelection);
+    planned = await planTaskFn(task, contextSelection);
   } catch (e) {
     console.log(`[plan] ERROR: ${e.message}`);
-    return;
+    return {ok:false, error:`planning failed: ${e.message}`};
   }
 
   let plan = planned.steps;
@@ -230,11 +287,23 @@ async function runTask(task) {
 
   let recoveryInferenceTotal = 0;
   let locatorInferenceTotal = 0;
+  const intentResults = [];
   const startTask = performance.now();
 
   for (let i = 0; i < plan.length; i++) {
     const intent = plan[i];
     const recoveryHistory = [];
+    const visualContract = visualFallbackContractForIntent(
+      intent,
+      options.visualFallbackContracts
+    );
+    const intentExecutionContext = visualContract
+      ? createLazyOpenVisualFallbackExecutionContext(
+          intent,
+          visualContract,
+          options.visualFallbackDependencies || {}
+        )
+      : {};
 
     console.log("");
     console.log(`[intent ${i + 1}/${plan.length}] ${JSON.stringify(intent)}`);
@@ -286,7 +355,11 @@ async function runTask(task) {
             console.log(`[intent ${i + 1}] precondition detail: ${readiness.detail}`);
           }
           console.log(`[intent ${i + 1}] FAIL: application readiness precondition not satisfied`);
-          return;
+          return {
+            ok:false,
+            error:"application readiness precondition not satisfied",
+            intentResults,
+          };
         }
 
         state = {
@@ -313,7 +386,7 @@ async function runTask(task) {
       let result;
 
       try {
-        result = await executeIntent(intent, state);
+        result = await executeIntent(intent, state, intentExecutionContext);
       } catch (e) {
         result = {
           ok:false,
@@ -349,6 +422,7 @@ async function runTask(task) {
         );
         if (result.detail) console.log(`[intent ${i + 1}] ${result.detail}`);
 
+        intentResults.push(summarizeIntentResult(intent, result));
         passed = true;
         break;
       }
@@ -426,6 +500,12 @@ async function runTask(task) {
               state.snapshot || "(no application snapshot)\n"
             );
 
+            intentResults.push({
+              id:intent?.id ?? null,
+              intent:intent?.intent || null,
+              ok:true,
+              executionPath:"semantic-result-locator",
+            });
             passed = true;
             break;
           }
@@ -537,7 +617,11 @@ async function runTask(task) {
       console.log(
         `[intent ${i + 1}] FAIL: ${lastFailure?.error || "intent could not be completed"}`
       );
-      return;
+      return {
+        ok:false,
+        error:lastFailure?.error || "intent could not be completed",
+        intentResults,
+      };
     }
   }
 
@@ -555,6 +639,13 @@ async function runTask(task) {
   console.log(
     `Total incl. planner: ${(executionTotal + planned.seconds).toFixed(2)}s.`
   );
+
+  return {
+    ok:true,
+    state,
+    plan,
+    intentResults,
+  };
 }
 
 let agentCtrlCleanupDone = false;
@@ -669,7 +760,16 @@ async function main() {
   ask();
 }
 
-main().catch(e => {
-  console.error(e.stack || e.message);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch(e => {
+    console.error(e.stack || e.message);
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  runTask,
+  cleanupComputerControl,
+  visualFallbackContractForIntent,
+  summarizeIntentResult,
+};
