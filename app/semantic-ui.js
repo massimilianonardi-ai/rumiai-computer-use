@@ -1,6 +1,7 @@
 "use strict";
 
 const { find } = require("./computer-control-external");
+const { SEMANTIC_RESULT_CODES } = require("./semantic-visual-fallback-eligibility");
 
 const EDITABLE_ROLES = new Set(["search-box", "text-field", "text-area", "textarea", "combobox"]);
 const DIRECT_CLICK_ROLES = new Set([
@@ -76,7 +77,11 @@ function normText(x) {
 function resolveSemanticTarget(snapshot, target, roleHint, kind, app = null) {
   const wanted = normText(target);
   if (!wanted) {
-    return { ok: false, error: "empty semantic target" };
+    return {
+      ok:false,
+      code:SEMANTIC_RESULT_CODES.INVALID_INTENT,
+      error:"empty semantic target",
+    };
   }
 
   const nodes = parseSnapshot(snapshot);
@@ -143,7 +148,11 @@ function resolveSemanticTarget(snapshot, target, roleHint, kind, app = null) {
   }
 
   if (!candidates.length) {
-    return { ok: false, error: `no semantic match for "${target}"` };
+    return {
+      ok:false,
+      code:SEMANTIC_RESULT_CODES.NO_SEMANTIC_TARGET,
+      error:`no semantic match for "${target}"`,
+    };
   }
 
   let chosen = candidates[0];
