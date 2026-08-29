@@ -6,24 +6,28 @@ This is the operational handoff for Computer Use visual perception / visual fall
 
 ## Current authoritative state
 
-- Computer Use validated P5C runtime: `8f21dd520356fc30e147e17adfff2c7567f36b83`.
+P5 is **complete for the initial narrow scope**.
+
+- Current validated Computer Use P5E runtime: `3e52ebaebc20398787d904d6ed6e2d2111fe5710`.
 - Computer Control dependency: `e3a3f13d66546cf8f0fca50075bd4607c2c3d003`.
-- P5C authoritative physical session: `cu-perception-p5c-open-semantic-first-public-s08`.
-- P5C evidence commit: `9195ae930f87f9804052e5024cb406b1488a747b`.
-- P5C frozen test source: `21c00a22c28d2ac30841eb0afcb56bba3f273aaf`.
-- P5C tested PoC SHA: `3de353c9b307c60d2a6d5736a9253c45c6137a64`.
-- P5C result: 6 PASS / 0 FAIL / 0 BLOCKED.
+- P5E authoritative session: `cu-perception-p5e-agent-loop-visual-fallback-public-s01`.
+- P5E evidence: `d18e82d06456438f289eb0bf6c6f630973b5a99f`.
+- P5E frozen test source: `59094fe637d078eaa08436114e45d74308b45428`.
+- P5E tested PoC SHA: `fdb6a17ce2f0744533c123016bff5fce8f4e7704`.
+- P5E result: 8 PASS / 0 FAIL / 0 BLOCKED.
 - P5A: `PHYSICALLY_VALIDATED`.
 - P5B: `CONTRACT_VALIDATED`.
 - P5C: `PHYSICALLY_VALIDATED`.
-- Active checkpoint: **P5D concrete perception-provider delivery/selection boundary**.
+- P5D: `PHYSICALLY_VALIDATED`.
+- P5E: `PHYSICALLY_VALIDATED`.
+- Next recommended checkpoint: **P6A first real product skill/caller visual-fallback contract**.
 
 Documentation commits after a validated runtime do not imply product behavior changes. On resume always verify current remote heads and ancestry.
 
 ## Repository ownership
 
-- `rumiai-computer-use`: intent, interpretation, provider-neutral perception contracts, provider selection, target resolution, fallback policy, execution semantics, postcondition verification and orchestration.
-- `rumiai-computer-control`: desktop observation/action mechanics and delivery boundaries only. Perception-provider implementation/selection does not belong here.
+- `rumiai-computer-use`: semantic intent/execution, interpretation, perception providers, target resolution, fallback policy, success verification, skills/caller contracts and orchestration.
+- `rumiai-computer-control`: desktop observation/action mechanics and delivery boundaries only. It remains perception-provider-free.
 - `rumiai-computer-use-PoCs`: discovery, immutable physical evidence, fixtures, contract tests and SHA locking.
 
 Reference Mac paths:
@@ -40,18 +44,18 @@ For every fresh manual terminal session, the first command must be `cd` into the
 
 ## Non-negotiable invariants
 
-1. Semantic-first: structured Computer Control observation/action is preferred whenever it can solve the task.
-2. Visual fallback is explicit; never silently weaken semantic APIs.
+1. Semantic-first: structured semantic observation/action is preferred whenever it can solve the task.
+2. Visual fallback is explicit; it is never a generic retry mechanism.
 3. `delivery != success`; `CLICK_POSTED` is delivery evidence only.
 4. `IMPLEMENTED != PHYSICALLY_VALIDATED`.
 5. Visual observation != semantic identity != action authorization != task success.
-6. Native/AX/PID/display identities remain private unless an intentionally low-level contract requires them.
-7. Capture pixels and pointer coordinates are separate spaces; mapping is derived from observations.
-8. Screenshot bytes, OCR text and target/action coordinates are sensitive and stay ephemeral.
-9. Physical evidence is immutable; failed/interrupted sessions are preserved.
-10. Git is forward-only.
-11. Perception providers and provider selection belong to Computer Use, never Computer Control.
-12. Planner/LLM output remains semantic: no coordinates and no fabricated postconditions.
+6. Planner output remains semantic: no coordinates, provider identity or fabricated postconditions.
+7. Only structured P5B-eligible semantic observability/resolution gaps may consider visual fallback.
+8. Perception provider selection belongs to Computer Use, never Computer Control.
+9. No mandatory network/account/cloud API dependency is introduced by perception.
+10. Screenshot bytes, OCR text and target/action coordinates are sensitive and remain ephemeral/out of ordinary logs.
+11. Physical evidence is immutable; failed/interrupted sessions are preserved.
+12. Git is forward-only.
 
 ## Validated checkpoints
 
@@ -67,105 +71,97 @@ For every fresh manual terminal session, the first command must be `cd` into the
 | P5A | PHYSICALLY_VALIDATED | `cu-perception-p5a-visual-fallback-coordinator-public-s01` / `8076ddeaa3ac061e5cc1fb745aa97e1f9badb0c3` | `cc9e26e87aa83239378d466d64879229fe2302bc` |
 | P5B | CONTRACT_VALIDATED | `cu-perception-p5b-semantic-visual-eligibility-contract-s02` / `cbc88158c4cefd7a32ee3acec6e0424eb1a8f1ec` | `28c654d51c1014ee826dcf24f42b6758dc67a721` |
 | P5C | PHYSICALLY_VALIDATED | `cu-perception-p5c-open-semantic-first-public-s08` / `9195ae930f87f9804052e5024cb406b1488a747b` | `8f21dd520356fc30e147e17adfff2c7567f36b83` |
+| P5D | PHYSICALLY_VALIDATED | `cu-perception-p5d-provider-selection-public-s01` / `3d48e86a09f70d37fad9765d0694294cdc13f2ba` | `2262237e92965d9e5171a9688694f13d2bc183aa` |
+| P5E | PHYSICALLY_VALIDATED | `cu-perception-p5e-agent-loop-visual-fallback-public-s01` / `d18e82d06456438f289eb0bf6c6f630973b5a99f` | `3e52ebaebc20398787d904d6ed6e2d2111fe5710` |
 
-P1–P4 are already physically validated. Do not rerun them physically. Contract regressions are allowed where needed by later checkpoints.
+P1–P5 physical evidence is authoritative. Do not rerun already validated physical checkpoints merely for regression; contract regressions are allowed.
 
 ## Current product architecture
 
 ```text
-app/perception.js                       P1/P1B mapped visual frame
-app/perception-provider.js              P2B provider-neutral interpretation contract
-app/perception-target.js                P3A deterministic visual target resolution
-app/perception-action-policy.js         P3B fallback authorization
-app/perception-action-execution.js      P4 delivery + independent verification
-app/perception-action-coordinator.js    P5A composition
+app/perception.js                           P1/P1B mapped visual frame
+app/perception-provider.js                  P2B provider-neutral interpretation
+app/perception-target.js                    P3A exact-text target resolution
+app/perception-action-policy.js             P3B explicit fallback authorization
+app/perception-action-execution.js          P4 delivery + independent verification
+app/perception-action-coordinator.js        P5A composition
 app/semantic-visual-fallback-eligibility.js P5B structured eligibility
-app/open-semantic-first.js              P5C semantic-first visual handoff boundary
-app/executors.js                         P5C OPEN integration
+app/open-semantic-first.js                  P5C semantic-first handoff
+app/executors.js                            P5C OPEN integration
+app/perception-provider-manager.js          P5D perception-provider selection
+app/perception-providers/macos-vision.js    P5D optional local concrete provider
+app/visual-fallback-execution-context.js    P5E lazy deterministic context construction
+app/agent-loop.js                           P5E normal orchestration wiring
 ```
 
-The existing `app/provider-manager.js` is an **application Provider manager**: it resolves application descriptors, aliases, bundle/process identity and application availability. Do not repurpose it for perception-provider selection merely because both use the word “provider”. P5D should use an explicit perception-provider boundary unless evidence establishes a genuine shared abstraction.
+The existing `app/provider-manager.js` remains application-provider management and is deliberately separate from perception-provider selection.
 
-## What P5C physically proves
+## What P5E physically proves
 
-The P5C s08 session proves both executor paths:
+The authoritative s01 run exercised the product-owned normal `runTask()` path with a deterministic test planner whose complete semantic plan was:
 
 ```text
-semantic OPEN
-  -> semantic target exists
-  -> Computer Control click delivery
-  -> fresh post-action snapshot
-  -> fresh target resolution
-  -> normalized Computer Control ui.describe selected state
-  -> semantic success
-  -> visual provider/P5A not invoked
+ACTIVATE_APP(RumiAI P5C Semantic Fixture)
+OPEN(RUMIAI CLICK 517)
 ```
 
-and:
+No visual-fallback fields, provider identity, postcondition or coordinates were present in planner output.
+
+The OPEN path then physically executed:
 
 ```text
-visual OPEN
-  -> semantic target absent
-  -> structured NO_SEMANTIC_TARGET
-  -> explicit visual policy + deterministic target/postcondition
-  -> P5A
-  -> local injected provider
-  -> real Computer Control CLICK_POSTED
-  -> independent post-action visual observation
-  -> exact postcondition satisfied
-  -> VERIFIED_SUCCESS
+semantic OPEN first
+→ NO_SEMANTIC_TARGET
+→ P5B eligible
+→ lazy visual context resolution
+→ P5D selects rumiai.local.macos-vision-text-region
+→ P5A
+→ real Computer Control CLICK_POSTED
+→ semanticConsequenceVerified=false
+→ fresh post-action mapped capture
+→ local Vision interpretation
+→ exact deterministic postcondition
+→ VERIFIED_SUCCESS
+→ normal agent loop reports PASS
 ```
 
-The physical log explicitly showed `visualProviderCalls=0` on semantic success and `CLICK_POSTED deliveryIsNotSuccess=true` on the visual branch. Product cleanup and tree cleanliness passed.
+This proves orchestration mechanics, not general LLM planning accuracy. Ordinary CLI calls that provide no explicit caller/skill visual contract do not automatically gain visual fallback.
 
-The final semantic verification intentionally does not treat focus or event delivery as success. It obtains fresh post-action evidence and consumes the normalized state exposed through Computer Control `ui.describe`.
+## Important P5 history
 
-## P5C immutable failed history
+P5C s01–s07 are immutable FAIL evidence. They document fixture/provider problems and the eventual discovery that normalized selectable state belonged in Computer Control `ui.describe`, not only textual snapshot markers. s08 is authoritative.
 
-Do not delete, amend or replace these sessions:
+P5D s01 established provider selection independently from OCR correctness. P5E s01 then used the actual product macOS Vision provider in the normal agent loop.
 
-- s01 `15976727c6b6a09b09b428c415c5daf74e6c0258`: standalone fixture was not a supported Provider.
-- s02 `86793f0077d0926554c71422e4394b3bf3c62b9a`: registered direct executable remained unsnapshotable.
-- s03 `26be209cfcdb9fa5ab81a2a23d823344c598a6d8`: LaunchServices fixture snapshot failure.
-- s04 `630ac6c68cc7c960c01455a85dadbfb9f51abca8`: System Settings `no AX window found` surface mismatch.
-- s05 `4c20c9bc2425829a26207f46a7c99fab54be1a9d`: AppKit Provider reached OPEN but title-based verification failed.
-- s06 `9b695a32383ae22b70dd1498d823ebb27ae0080b`: radio state was real but not consumed by Computer Use verification.
-- s07 `f2a2b81263f1ba052745e1dc9ef021a7533f1231`: first fix targeted snapshot markers; normalized state actually lived in `ui.describe`.
+## Exact next checkpoint: P6A
 
-s08 is authoritative. Every correction was forward-only.
-
-## Exact next checkpoint: P5D
-
-Goal: define concrete perception-provider delivery/discovery/selection inside Computer Use, independently of OCR correctness.
+Goal: replace the **test-owned visual-fallback contract** used by P5E with one first narrow **real product skill/caller contract**, without changing the validated semantic planner schema or weakening any P5 boundary.
 
 Required properties:
 
-- separate perception-provider manager from application Provider management;
-- descriptor includes `id`, `locality`, capabilities and explicit availability;
-- deterministic capability/locality selection;
-- local-first preference without making network providers mandatory;
-- no account/API/cloud requirement;
-- P2B provider-neutral contract remains unchanged;
-- first optional concrete adapter may use macOS Vision;
-- Computer Control remains provider-free;
-- selection contract is independently testable;
-- physical evidence proves real local provider availability/selection, not OCR accuracy;
-- no agent-loop visual fallback wiring yet.
+- one narrowly scoped, deterministic real application/task contract;
+- the planner still emits ordinary semantic intent only;
+- the skill/caller determines whether visual fallback is authorized for that intent;
+- exact visual target is deterministic and must match the semantic OPEN target;
+- exact postcondition is deterministic and application/task-specific;
+- provider requirements are declarative (`text-region`, local by default), not a hard-coded provider object;
+- provider selection remains lazy and happens only after a P5B-eligible semantic gap;
+- no coordinates enter skill/planner data;
+- no fallback on semantic delivery/verification/readiness/permission/internal failures;
+- success still requires independent post-action evidence;
+- first validate contract behavior, then one physical real-skill flow.
 
-P5D should first land product contract + contract tests, then freeze runtime/test-source, then create an immutable physical selection session.
+Before implementing P6A, inspect existing `skills/`, `skill-manager.js`, context/provider conventions and choose the narrowest real skill whose visual target and postcondition can be deterministic. Do not invent a generic visual skill framework prematurely.
 
-## P5E after P5D
+## Later hardening, not P6A prerequisites
 
-Only after P5D is validated:
-
-1. normal planner emits existing semantic intent;
-2. normal executor attempts semantic path first;
-3. structured eligible gap permits fallback consideration;
-4. Computer Use selects the configured local provider;
-5. explicit fallback policy and deterministic target/postcondition authorize P5A;
-6. Computer Control performs delivery;
-7. independent post-action observation verifies consequence;
-8. agent-loop reports success only from verified task outcome.
+- provider packaging/cache/version hardening;
+- additional local/remote providers and ranking;
+- fuzzy/contextual text matching;
+- icon/object/VLM observations;
+- secondary/rotated displays;
+- richer pointer/keyboard gestures;
+- richer postconditions/recovery.
 
 ## Development workflow
 
@@ -176,8 +172,8 @@ Only after P5D is validated:
 5. Add/update contract and physical PoC tests.
 6. Freeze exact test-source SHA.
 7. Add only runner + manifest after test-source freeze.
-8. User runs the exact physical session on the reference Mac.
+8. User executes the exact physical session on the reference Mac.
 9. Inspect remote immutable evidence, not only terminal summary.
-10. Promote checkpoint only after all claims are evidenced.
+10. Promote only after all claims are evidenced.
 
-Immediate next implementation checkpoint: **P5D concrete perception-provider delivery/selection boundary**.
+Immediate next implementation checkpoint: **P6A first real product skill/caller visual-fallback contract**.
