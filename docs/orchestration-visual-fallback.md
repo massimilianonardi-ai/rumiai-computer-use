@@ -1,6 +1,8 @@
 # Visual fallback orchestration
 
-Status: **P5 COMPLETE for the initial narrow scope**.
+Status: **P5 COMPLETE for the initial narrow scope; P6A PHYSICALLY_VALIDATED; P6B ACTIVE**.
+
+Validated states:
 
 - P1–P4: `PHYSICALLY_VALIDATED`
 - P5A: `PHYSICALLY_VALIDATED`
@@ -8,6 +10,7 @@ Status: **P5 COMPLETE for the initial narrow scope**.
 - P5C: `PHYSICALLY_VALIDATED`
 - P5D: `PHYSICALLY_VALIDATED`
 - P5E: `PHYSICALLY_VALIDATED`
+- P6A: `PHYSICALLY_VALIDATED`
 
 Detailed perception/action contracts are in `docs/perception.md`; operational resume state is in `docs/handoff.md`.
 
@@ -25,118 +28,9 @@ Detailed perception/action contracts are in `docs/perception.md`; operational re
 - Perception payloads and coordinates remain ephemeral and out of ordinary logs/evidence.
 - Evidence is immutable; Git advances forward-only.
 
-## P5A — visual fallback coordinator
+## P5 closed capability
 
-Status: `PHYSICALLY_VALIDATED`.
-
-`app/perception-action-coordinator.js::runVisualTextFallback(...)` composes P1B → P2B → P3A → P3B → P4. It does not select providers, classify semantic eligibility, change planner semantics, guess targets or invent postconditions.
-
-Authoritative validation:
-
-- session: `cu-perception-p5a-visual-fallback-coordinator-public-s01`
-- evidence: `8076ddeaa3ac061e5cc1fb745aa97e1f9badb0c3`
-- runtime: `cc9e26e87aa83239378d466d64879229fe2302bc`
-- Computer Control: `e3a3f13d66546cf8f0fca50075bd4607c2c3d003`
-- test source: `aaa88a862cba2f42fcecc4b21619c5b10eceeb85`
-
-## P5B — semantic-to-visual eligibility
-
-Status: `CONTRACT_VALIDATED`.
-
-`app/semantic-visual-fallback-eligibility.js` is a pure deterministic classifier. Initial eligible codes are exactly:
-
-```text
-NO_SEMANTIC_TARGET
-SURFACE_NOT_OBSERVABLE
-```
-
-Readiness, permission/backend, semantic delivery, semantic verification, internal exception and invalid intent/precondition failures remain visually ineligible. Missing/unknown codes fail closed; free-form error text is never parsed for the decision.
-
-Authoritative validation:
-
-- session: `cu-perception-p5b-semantic-visual-eligibility-contract-s02`
-- evidence: `cbc88158c4cefd7a32ee3acec6e0424eb1a8f1ec`
-- runtime: `28c654d51c1014ee826dcf24f42b6758dc67a721`
-- test source: `e5651329fa066ff41d07c98295102b3fa6bebcc1`
-
-## P5C — OPEN semantic-first executor integration
-
-Status: `PHYSICALLY_VALIDATED`.
-
-`OPEN(target)` executes the existing semantic path first. Semantic success returns directly and visual perception is not run. Only a P5B-eligible gap may proceed to a deterministic, explicitly authorized visual context and P5A.
-
-Semantic success is itself verified from fresh post-action evidence. Delivery/focus alone is insufficient; normalized semantic state from Computer Control `ui.describe` may provide the independent consequence evidence.
-
-Authoritative validation:
-
-- session: `cu-perception-p5c-open-semantic-first-public-s08`
-- evidence: `9195ae930f87f9804052e5024cb406b1488a747b`
-- runtime: `8f21dd520356fc30e147e17adfff2c7567f36b83`
-- test source: `21c00a22c28d2ac30841eb0afcb56bba3f273aaf`
-- tested PoC: `3de353c9b307c60d2a6d5736a9253c45c6137a64`
-
-Historical P5C s01–s07 FAIL evidence remains immutable.
-
-## P5D — concrete perception provider selection
-
-Status: `PHYSICALLY_VALIDATED`.
-
-`app/perception-provider-manager.js` is a Computer Use-owned boundary separate from application-provider management. It selects perception providers deterministically by capability, locality, explicit availability and provider id ordering. Selection does not call `observe()` and does not silently replace an unavailable local provider with a remote provider.
-
-The first concrete provider is the optional local macOS Vision `text-region` adapter under `app/perception-providers/`. It declares no required network, account or cloud API.
-
-Authoritative validation:
-
-- session: `cu-perception-p5d-provider-selection-public-s01`
-- evidence: `3d48e86a09f70d37fad9765d0694294cdc13f2ba`
-- runtime: `2262237e92965d9e5171a9688694f13d2bc183aa`
-- test source: `42305c85cbec46d7e43fcf429715b1d583f4018c`
-- tested PoC: `4f04d6b0225d0a456d53e1206ff5bf319da605f8`
-
-Physical selection proved the real local provider `AVAILABLE` and selected for `text-region/local` with `observeCalls = 0`.
-
-## P5E — normal agent-loop end-to-end visual fallback
-
-Status: `PHYSICALLY_VALIDATED`.
-
-The normal `agent-loop.js::runTask()` path now accepts an optional deterministic caller/skill visual-fallback contract. The CLI path supplies none by default, so visual fallback does not become implicit.
-
-The visual execution context is resolved lazily. The validated order is:
-
-```text
-semantic planner output
-→ normal agent loop
-→ semantic OPEN first
-→ structured eligible gap
-→ P5B classification
-→ lazy P5D provider selection
-→ deterministic visual execution context
-→ P5A
-→ Computer Control CLICK_POSTED
-→ fresh independent post-action perception
-→ deterministic postcondition
-→ VERIFIED_SUCCESS
-```
-
-Authoritative validation:
-
-- session: `cu-perception-p5e-agent-loop-visual-fallback-public-s01`
-- evidence: `d18e82d06456438f289eb0bf6c6f630973b5a99f`
-- Computer Use runtime: `3e52ebaebc20398787d904d6ed6e2d2111fe5710`
-- Computer Control: `e3a3f13d66546cf8f0fca50075bd4607c2c3d003`
-- frozen test source: `59094fe637d078eaa08436114e45d74308b45428`
-- tested PoC: `fdb6a17ce2f0744533c123016bff5fce8f4e7704`
-- result: 8 PASS / 0 FAIL / 0 BLOCKED
-
-The physical plan contained only ordinary semantic intents `ACTIVATE_APP` and `OPEN`. It contained no visual-fallback fields, provider identity, postcondition or coordinates. After semantic `NO_SEMANTIC_TARGET`, Computer Use lazily selected `rumiai.local.macos-vision-text-region`, P5A performed real Computer Control delivery, and the agent loop reported success only after a new independent visual observation satisfied the exact postcondition.
-
-`CLICK_POSTED` remained delivery evidence with `semanticConsequenceVerified = false`; only the independent post-action observation produced `VERIFIED_SUCCESS`.
-
-See `docs/evidence/perception-p5e-agent-loop-visual-fallback-public-physical.md`.
-
-## Initial P5 scope now closed
-
-The following narrow capability is now validated as one coherent product path:
+The initial validated product path is:
 
 ```text
 semantic intent
@@ -150,16 +44,86 @@ semantic intent
 → verified agent-loop success
 ```
 
-This is not a claim of general UI understanding or arbitrary computer use.
+Authoritative P5E validation:
 
-## Next program: post-P5 hardening / productization
+- session: `cu-perception-p5e-agent-loop-visual-fallback-public-s01`
+- evidence: `d18e82d06456438f289eb0bf6c6f630973b5a99f`
+- Computer Use runtime: `3e52ebaebc20398787d904d6ed6e2d2111fe5710`
+- Computer Control: `e3a3f13d66546cf8f0fca50075bd4607c2c3d003`
+- test source: `59094fe637d078eaa08436114e45d74308b45428`
+- result: 8 PASS / 0 FAIL / 0 BLOCKED
 
-Do not reopen validated P1–P5 contracts without new evidence. Candidate next checkpoints are:
+The normal agent loop plan remained semantic (`ACTIVATE_APP`, `OPEN`), provider selection occurred only after structured `NO_SEMANTIC_TARGET`, real Computer Control returned `CLICK_POSTED`, and only a fresh post-action local Vision observation produced `VERIFIED_SUCCESS`.
 
-1. **P6A — first real product skill/caller contract**: move the explicit visual target/postcondition from test-owned context into one narrow deterministic application skill/caller contract, while preserving semantic planner output and explicit authorization.
-2. **P6B — provider packaging/runtime hardening**: avoid compile-on-first-observe where appropriate, define installation/cache/version behavior, and retain the no-mandatory-cloud rule.
-3. **P6C — broader visual observation types**: fuzzy/contextual text, icons/objects/VLM only as separately evidenced contracts.
-4. **P6D — display/action expansion**: secondary/rotated displays, additional pointer/keyboard gestures only through separate evidence programs.
-5. **P6E — richer postconditions/recovery**: expand success verification without weakening `delivery != success` or turning visual fallback into generic retry.
+## P6A — deterministic caller-contract registry
 
-Immediate next recommended checkpoint: **P6A first real product skill/caller contract**, because P5E has proven the orchestration mechanics and the remaining product gap is deterministic knowledge of when a real task has an authorized visual target and verifiable postcondition.
+Status: `PHYSICALLY_VALIDATED`.
+
+`app/visual-fallback-contract-manager.js` adds a local registry for deterministic caller-owned visual execution knowledge. It is separate from competence skills and from perception-provider selection.
+
+A contract is selected only when exactly one registry entry matches:
+
+```text
+application + OPEN + exact target
+```
+
+The selected execution contract carries exact target, exact postcondition, explicit visual-fallback authorization, the already validated primary-display left-click request and declarative provider requirements. It carries no concrete provider object, action coordinates or native identity.
+
+Authoritative validation:
+
+- session: `cu-perception-p6a-caller-contract-registry-public-s01`
+- evidence: `21ad01e93a5de4e5276b49c193269a26ad66b164`
+- Computer Use runtime: `5e4daf5ebf352535653bfb21a559026238966a20`
+- Computer Control: `e3a3f13d66546cf8f0fca50075bd4607c2c3d003`
+- frozen test source: `66455683f3088b6cfb7fa9e1a49274a9c08269f5`
+- tested PoC: `380c6f756dda2a2e798a7987e1d3aff2059060de`
+- result: 9 PASS / 0 FAIL / 0 BLOCKED
+
+The physical run proved exact local JSON registry lookup, semantic planner output, semantic `NO_SEMANTIC_TARGET` before lazy provider selection, product macOS Vision selection, real `CLICK_POSTED` delivery and independent `VERIFIED_SUCCESS`.
+
+See `docs/evidence/perception-p6a-caller-contract-registry-public-physical.md`.
+
+## P6B — real-application contract discovery
+
+Status: `ACTIVE`.
+
+A built-in application contract must not be invented from UI intuition. Before adding one to product knowledge, discover and physically prove the application surface.
+
+First candidate: **Safari**, already represented by the product application Provider. The discovery surface is a local test-owned page rendered by real Safari with an HTML canvas that draws one exact target and replaces it with one exact postcondition after a pointer click.
+
+Why Safari/canvas:
+
+- Safari is a real supported application rather than another custom desktop fixture;
+- canvas is a natural semantic-observability gap: visible pixels may not expose the drawn text as an AX target;
+- local content removes network variability;
+- target and postcondition can be deterministic without hard-coded coordinates;
+- the existing P1–P5 mechanics can be reused without changing product runtime.
+
+P6B discovery must prove:
+
+1. no interference with an existing Safari user session: if Safari is already running, block before launch;
+2. real Safari launch/activation and current Computer Control observation;
+3. exact canvas target is absent from semantic resolution (`NO_SEMANTIC_TARGET`);
+4. product local macOS Vision provider is available/selected through P5D;
+5. mapped capture + P2B/P3A resolve exactly one visual target;
+6. P3B explicitly authorizes only the validated primary-display left click;
+7. Computer Control returns canonical `CLICK_POSTED` with no claimed semantic consequence;
+8. fresh independent post-action capture observes exactly the deterministic postcondition and no longer the original target;
+9. no screenshot bytes, OCR payload or coordinates are persisted/logged;
+10. pointer, Safari, local page and runtime are cleaned up and product trees remain clean.
+
+P6B is discovery only. A PASS does not authorize generic Safari visual fallback and does not by itself create a shipped registry entry. Promotion to built-in product knowledge requires a subsequent bounded contract whose scope corresponds to demonstrated application/task semantics.
+
+## Deferred hardening
+
+Still separate evidence programs:
+
+- provider packaging/cache/version hardening;
+- additional local/remote providers and ranking;
+- fuzzy/contextual text matching;
+- icon/object/VLM observations;
+- secondary/rotated displays;
+- richer pointer/keyboard gestures;
+- richer postconditions/recovery.
+
+Immediate next checkpoint: **P6B Safari real-application visual contract discovery**.
