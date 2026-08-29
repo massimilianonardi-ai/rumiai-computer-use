@@ -16,6 +16,7 @@ function normalizeContract(raw,source="unknown"){
   const intent=normalizeText(raw.intent||"OPEN");
   const target=normalizeText(raw.target);
   const postcondition=normalizeText(raw.postcondition);
+  const scopeId=normalizeText(raw.scopeId);
   if(!id||!application||intent!=="OPEN"||!target||!postcondition)return null;
 
   const providerRequest=raw.providerRequest&&typeof raw.providerRequest==="object"
@@ -34,6 +35,7 @@ function normalizeContract(raw,source="unknown"){
     intent:"OPEN",
     target,
     postcondition,
+    ...(scopeId?{scopeId}:{}),
     providerRequest:Object.freeze({
       capabilities:Object.freeze(capabilities),
       locality,
@@ -75,6 +77,7 @@ function contractToExecutionContract(contract){
     callerContract:{
       id:contract.id,
       application:contract.application,
+      ...(contract.scopeId?{scopeId:contract.scopeId}:{}),
       source:contract.source,
     },
   };
@@ -86,14 +89,29 @@ function selectVisualFallbackCallerContract(intent,state={},options={}){
   const application=normalizeApplication(intent.app||state.currentApp);
   if(!target||!application)return {ok:true,state:"NO_VISUAL_FALLBACK_CONTRACT",contract:null};
 
+  const requestedScopeId=normalizeText(options.scopeId);
+  const requireScope=options.requireScope===true;
+  if(requireScope&&!requestedScopeId){
+    return {
+      ok:false,
+      state:"VISUAL_FALLBACK_SCOPE_REQUIRED",
+      error:"VISUAL_FALLBACK_SCOPE_REQUIRED",
+      recoveryPolicy:"NONE",
+    };
+  }
+
   const contracts=Array.isArray(options.contracts)
     ? options.contracts.map((item,index)=>normalizeContract(item,`injected:${index}`)).filter(Boolean)
     : loadVisualFallbackContracts(options);
-  const matches=contracts.filter(contract=>
-    normalizeApplication(contract.application)===application &&
-    contract.intent==="OPEN" &&
-    contract.target===target
-  );
+  const matches=contracts.filter(contract=>{
+    const baseMatch=
+      normalizeApplication(contract.application)===application &&
+      contract.intent==="OPEN" &&
+      contract.target===target;
+    if(!baseMatch)return false;
+    if(contract.scopeId)return Boolean(requestedScopeId&&contract.scopeId===requestedScopeId);
+    return !requireScope;
+  });
 
   if(matches.length===0)return {ok:true,state:"NO_VISUAL_FALLBACK_CONTRACT",contract:null};
   if(matches.length>1){
@@ -114,6 +132,7 @@ function selectVisualFallbackCallerContract(intent,state={},options={}){
       id:matches[0].id,
       application:matches[0].application,
       target:matches[0].target,
+      ...(matches[0].scopeId?{scopeId:matches[0].scopeId}:{}),
       source:matches[0].source,
     },
   };
