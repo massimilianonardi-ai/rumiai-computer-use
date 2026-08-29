@@ -186,7 +186,7 @@ P3B does not import Computer Control and performs no input action. Even an autho
 
 ## P4 — visual fallback execution with independent postcondition
 
-Status: `IMPLEMENTED`, pending physical runtime validation.
+Status: `PHYSICALLY_VALIDATED` on the reference Mac.
 
 `app/perception-action-execution.js` exposes:
 
@@ -209,11 +209,13 @@ P4 preserves the delivery/success distinction explicitly:
 - posted delivery without the postcondition returns `NOT_VERIFIED_SUCCESS`;
 - `VERIFIED_SUCCESS` is possible only when the new post-action observation independently satisfies the exact postcondition.
 
-The executor does not treat `CLICK_POSTED` as semantic success, does not persist screen data, and does not broaden the action vocabulary beyond the physically validated P3B plan. P4 physical validation uses a test-owned nonactivating AppKit fixture whose visual text changes only after receiving the click; verification is performed through a new capture and OCR observation rather than a fixture-internal success flag.
+The public execution path was physically validated in session `cu-perception-p4-action-execution-public-s01`, evidence commit `cd86381d05bb7fcbda91ebe77ff8d8806ee827fa`, against Computer Use runtime `5dc3607ff18b20ab806b9bf455b68f962a005e9f`. The real Computer Control click returned `CLICK_POSTED` with `semanticConsequenceVerified = false`; a fresh independent visual capture then observed a postcondition that was absent before the action, and only that observation produced `taskOutcome.state = "VERIFIED_SUCCESS"`. Pointer, fixture and runtime cleanup also passed. Authoritative evidence is recorded in `docs/evidence/perception-p4-action-execution-public-physical.md`.
+
+This closes the first physically validated end-to-end visual fallback path on the reference Mac: capture → mapping → provider-neutral interpretation → deterministic target resolution → explicit fallback authorization → real Computer Control delivery → independent post-action verification. The result remains deliberately narrow to the validated scope rather than a claim of general UI understanding.
 
 ## Interpretation, target, policy, execution and verification boundary
 
-A visual observation is not a semantic element identity and is not proof that an action will succeed. P2 adds perception observations. P3 resolves a target and evaluates whether an explicit low-level fallback may be planned. P4 is the first stage allowed to execute that plan, but success remains contingent on a separate post-action observation.
+A visual observation is not a semantic element identity and is not proof that an action will succeed. P2 adds perception observations. P3 resolves a target and evaluates whether an explicit low-level fallback may be planned. P4 executes that plan only through Computer Control, and success remains contingent on a separate post-action observation.
 
 The preferred execution order remains:
 
