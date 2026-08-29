@@ -1,12 +1,12 @@
 # Visual fallback orchestration plan
 
-Status: P1–P4 and P5A physically validated; P5B is the active checkpoint.
+Status: P1–P4, P5A and P5C are physically validated; P5B is contract-validated; P5D is the active checkpoint.
 
-This document fixes the next implementation sequence after completion of the first physically validated visual fallback path. The detailed perception/action contracts remain in `docs/perception.md`; operational resume state is in `docs/handoff.md`.
+This document fixes the implementation sequence for integrating visual fallback without weakening semantic-first behavior. Detailed perception/action contracts remain in `docs/perception.md`; operational resume state is in `docs/handoff.md`.
 
 ## Why P5 exists
 
-The visual stack is already physically validated end to end:
+The visual stack is physically validated end to end:
 
 ```text
 capture
@@ -19,9 +19,7 @@ capture
 → verified success
 ```
 
-However, this stack is still a set of isolated product modules. The normal Computer Use path in `agent-loop.js` / `executors.js` remains semantic-first and does not yet invoke the visual stack as an orchestrated fallback.
-
-P5 integrates the validated capability without changing the architectural rule that semantic operations are preferred whenever available.
+P5 turns that validated capability into an orchestrated Computer Use capability while preserving semantic-first execution.
 
 ## Invariants for all P5 work
 
@@ -35,100 +33,132 @@ P5 integrates the validated capability without changing the architectural rule t
 - `CLICK_POSTED` remains delivery only.
 - `VERIFIED_SUCCESS` requires independent post-action evidence.
 - Concrete perception-provider implementation/selection stays outside Computer Control.
+- Evidence is immutable and Git history advances forward-only.
 
 ## P5A — visual fallback coordinator
 
 Status: `PHYSICALLY_VALIDATED` on the reference Mac.
 
-Goal: compose the existing P1B/P2B/P3A/P3B/P4 modules into one explicit Computer Use operation while retaining their independent contracts.
+`app/perception-action-coordinator.js` exposes `runVisualTextFallback(...)`. It accepts an injected perception provider plus deterministic target/action/policy/postcondition inputs and composes P1B → P2B → P3A → P3B → P4 without selecting a provider, deciding semantic fallback eligibility, altering planner semantics, guessing targets or inferring postconditions.
 
-`app/perception-action-coordinator.js` exposes the explicit coordinator `runVisualTextFallback(...)`. It accepts an injected perception provider plus deterministic target/action/policy/postcondition inputs and composes P1B → P2B → P3A → P3B → P4 without selecting a provider, deciding semantic fallback eligibility, altering planner semantics, guessing targets or inferring postconditions.
+Authoritative validation:
 
-The public coordinator path was physically validated in session `cu-perception-p5a-visual-fallback-coordinator-public-s01`, evidence commit `8076ddeaa3ac061e5cc1fb745aa97e1f9badb0c3`, against Computer Use runtime `cc9e26e87aa83239378d466d64879229fe2302bc` and Computer Control `e3a3f13d66546cf8f0fca50075bd4607c2c3d003`. Frozen test source was `aaa88a862cba2f42fcecc4b21619c5b10eceeb85`. The session completed 13 PASS / 0 FAIL / 0 BLOCKED and left both product trees clean.
+- session: `cu-perception-p5a-visual-fallback-coordinator-public-s01`
+- evidence: `8076ddeaa3ac061e5cc1fb745aa97e1f9badb0c3`
+- Computer Use runtime: `cc9e26e87aa83239378d466d64879229fe2302bc`
+- Computer Control: `e3a3f13d66546cf8f0fca50075bd4607c2c3d003`
+- frozen test source: `aaa88a862cba2f42fcecc4b21619c5b10eceeb85`
+- result: 13 PASS / 0 FAIL / 0 BLOCKED
 
 The physical run proved one real authorized visual click plus fresh independent post-action observation through the coordinator. `CLICK_POSTED` remained delivery only with `semanticConsequenceVerified = false`; only the independently observed deterministic postcondition produced `VERIFIED_SUCCESS`.
 
-Authoritative promotion detail is recorded in `docs/evidence/perception-p5a-visual-fallback-coordinator-public-physical.md`.
+See `docs/evidence/perception-p5a-visual-fallback-coordinator-public-physical.md`.
 
 ## P5B — semantic-to-visual eligibility classification
 
-Goal: define exactly when a semantic executor failure is a capability/observability gap that may be handed to P5A.
+Status: `CONTRACT_VALIDATED`.
 
-Today many executor failures are expressed as human-readable strings. P5 must not parse those strings to make safety-relevant fallback decisions.
-
-Introduce structured failure/result codes at the semantic boundary. Initial visual eligibility should be intentionally small, equivalent to:
+`app/semantic-visual-fallback-eligibility.js` provides a pure deterministic classifier. Initial visually eligible structured semantic failure codes are exactly:
 
 ```text
 NO_SEMANTIC_TARGET
 SURFACE_NOT_OBSERVABLE
 ```
 
-Examples that must remain ineligible by default:
+The following remain visually ineligible by default:
 
 ```text
 APPLICATION_NOT_READY
-PERMISSION/BACKEND BLOCKED
-SEMANTIC ACTION DELIVERY FAILED
-SEMANTIC POSTCONDITION/VERIFICATION FAILED
-INTERNAL EXCEPTION
-INVALID INTENT/PRECONDITION
+PERMISSION_OR_BACKEND_BLOCKED
+SEMANTIC_ACTION_DELIVERY_FAILED
+SEMANTIC_POSTCONDITION_VERIFICATION_FAILED
+INTERNAL_EXCEPTION
+INVALID_INTENT
+INVALID_PRECONDITION
 ```
 
-The eligibility classifier should be pure/deterministic and separately tested. A visual fallback must never be used as a generic retry mechanism for a failed semantic action.
+Missing, malformed and unknown codes fail closed. Free-form `error` text is not parsed for fallback eligibility.
+
+Authoritative validation:
+
+- session: `cu-perception-p5b-semantic-visual-eligibility-contract-s02`
+- evidence: `cbc88158c4cefd7a32ee3acec6e0424eb1a8f1ec`
+- Computer Use runtime: `28c654d51c1014ee826dcf24f42b6758dc67a721`
+- Computer Control: `e3a3f13d66546cf8f0fca50075bd4607c2c3d003`
+- frozen test source: `e5651329fa066ff41d07c98295102b3fa6bebcc1`
+- result: 4 PASS / 0 FAIL / 0 BLOCKED
+
+See `docs/evidence/perception-p5b-semantic-visual-eligibility-contract.md`.
 
 ## P5C — first executor integration: OPEN
 
-Goal: integrate one existing intent only, keeping scope narrow enough to prove the orchestration rule.
+Status: `PHYSICALLY_VALIDATED` on the reference Mac.
 
-Use `OPEN(target)` first because it already has a clear semantic target-resolution stage.
-
-Required flow:
+`OPEN(target)` now follows the bounded semantic-first flow:
 
 ```text
 OPEN(target)
-  → existing semantic resolution/action
-      → success: return semantic result; do not capture visually
+  → semantic resolution/action first
+      → semantic success:
+          → fresh semantic post-action verification
+          → return semantic result
+          → do not run visual perception
       → eligible semantic observability gap:
           → require explicit visual fallback policy
-          → require deterministic visual target query
-          → require deterministic postcondition
-          → P5A coordinator
-      → all other failure classes: return failure; no visual fallback
+          → require deterministic exact visual target
+          → require deterministic exact postcondition
+          → invoke P5A
+      → every other semantic failure:
+          → return failure
+          → no visual fallback
 ```
 
-The visual target query and postcondition must come from deterministic skill/context/caller data, not newly invented planner fields. The LLM continues to express semantic intent (`OPEN target`), not coordinates and not success criteria fabricated at execution time.
+The visual target and postcondition are supplied through execution context by deterministic skill/context/caller data. The planner remains unchanged and emits semantic intent only. Provider selection is intentionally not part of P5C.
 
-The initial physical executor test should use a test-owned fixture where:
+The final semantic verification does not equate click delivery or focus with success. After the click, Computer Use takes a fresh snapshot, re-resolves the semantic target and consumes the normalized control state exposed by Computer Control `ui.describe`; alternatively an independently observed window-title consequence may satisfy the postcondition. If neither proves the consequence, OPEN fails.
 
-- the semantic resolver is intentionally unable to observe the target;
-- the visual exact-text target is uniquely observable;
-- the expected postcondition is deterministic and absent before the click;
-- the postcondition appears only after the real click;
-- semantic-first behavior is separately proven with a case where the semantic target is available and visual capture/provider are not called.
+Authoritative validation:
 
-Promotion requires immutable physical evidence for both paths.
+- session: `cu-perception-p5c-open-semantic-first-public-s08`
+- evidence: `9195ae930f87f9804052e5024cb406b1488a747b`
+- Computer Use runtime: `8f21dd520356fc30e147e17adfff2c7567f36b83`
+- Computer Control: `e3a3f13d66546cf8f0fca50075bd4607c2c3d003`
+- frozen test source: `21c00a22c28d2ac30841eb0afcb56bba3f273aaf`
+- tested PoC SHA: `3de353c9b307c60d2a6d5736a9253c45c6137a64`
+- result: 6 PASS / 0 FAIL / 0 BLOCKED
+
+The physical session proved both paths. The semantic branch completed with `visualProviderCalls = 0`. The visual branch began from structured `NO_SEMANTIC_TARGET`, performed real Computer Control delivery, preserved `CLICK_POSTED != success`, and returned `VERIFIED_SUCCESS` only after a fresh independent visual postcondition observation. Product trees and cleanup were clean.
+
+Historical P5C failed sessions s01–s07 remain immutable. See `docs/evidence/perception-p5c-open-semantic-first-public-physical.md`.
 
 ## P5D — concrete perception-provider delivery and selection
 
-Goal: make an actual local perception provider available to normal Computer Use without embedding provider-specific assumptions in P2/P3/P4.
+Status: `ACTIVE`.
 
-Requirements:
+Goal: make an actual local perception provider discoverable/selectable by Computer Use without embedding provider-specific assumptions in P2B/P3/P4 or Computer Control.
 
-- Computer Use owns provider discovery/selection;
-- provider descriptor retains `id`, `locality`, capabilities and explicit availability;
-- P2B remains provider-neutral;
-- no mandatory network/account/cloud API;
-- macOS Vision may become the first optional local provider, but through a provider adapter/manager boundary;
-- the provider implementation must not migrate into Computer Control;
-- provider selection must be testable independently of target resolution/action execution.
+Fixed requirements:
 
-Do not broaden the P2 observation schema merely to make provider packaging convenient.
+- Computer Use owns provider discovery and selection.
+- The perception-provider manager is separate from the existing application `provider-manager.js` unless evidence proves the contracts are actually equivalent.
+- Provider descriptors retain `id`, `locality`, capabilities and explicit availability.
+- Selection is deterministic and capability-driven.
+- P2B remains provider-neutral and its observation schema is not broadened merely for packaging convenience.
+- No mandatory network/account/cloud API dependency is introduced.
+- A local macOS Vision adapter may be the first optional concrete provider.
+- Computer Control remains provider-free.
+- Provider selection must be testable independently of OCR correctness, target resolution and action execution.
+- P5D does not yet wire normal agent-loop visual fallback; that remains P5E.
+
+The first validation should prove that an available local `text-region` provider can be described, discovered and deterministically selected, while unavailable/unsupported providers fail closed. Physical validation should establish real local availability/selection independently of whether a particular screenshot OCR result is correct.
 
 ## P5E — first normal agent-loop end-to-end task
 
-Goal: validate the visual fallback through the normal Computer Use orchestration rather than a dedicated P1–P4 harness.
+Status: `PLANNED`, blocked on P5D.
 
-Prerequisites: P5A–P5D physically validated as appropriate.
+Goal: validate visual fallback through the normal Computer Use orchestration rather than a dedicated executor harness.
+
+Prerequisites: P5A–P5D validated as appropriate.
 
 The first supported task must demonstrate:
 
@@ -142,11 +172,11 @@ The first supported task must demonstrate:
 8. agent-loop reports success only from verified task outcome;
 9. product trees and sensitive-data logging policy remain clean.
 
-This is the milestone at which visual fallback becomes an orchestrated Computer Use capability.
+This is the checkpoint at which visual fallback becomes a normal orchestrated Computer Use capability.
 
 ## Deferred hardening after P5
 
-These are separate evidence programs, not requirements for P5A:
+These remain separate evidence programs:
 
 - multi-display / rotated-display mapping;
 - fuzzy/ranked or contextual text matching;
@@ -159,4 +189,4 @@ These are separate evidence programs, not requirements for P5A:
 
 ## Immediate next action
 
-Start **P5B semantic-to-visual eligibility classification**. Do not wire visual fallback into `OPEN` until P5B's structured codes and pure eligibility classifier are independently validated.
+Implement **P5D concrete perception-provider delivery/selection boundary**. Keep provider selection inside Computer Use, preserve P2B unchanged, validate selection independently from OCR correctness, and do not wire the normal agent loop until P5D is complete.
