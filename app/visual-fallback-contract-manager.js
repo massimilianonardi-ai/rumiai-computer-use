@@ -16,8 +16,15 @@ function normalizeSurfacePrecondition(raw){
   const match=normalizeText(raw.match);
   const text=normalizeText(raw.text);
   const role=normalizeText(raw.role);
-  if(kind!=="semantic-text"||match!=="exact"||!text)return undefined;
-  return Object.freeze({kind:"semantic-text",match:"exact",text,...(role?{role}:{})});
+  if(match!=="exact"||!text)return undefined;
+  if(kind==="semantic-text"){
+    return Object.freeze({kind:"semantic-text",match:"exact",text,...(role?{role}:{})});
+  }
+  if(kind==="window-title"){
+    if(role)return undefined;
+    return Object.freeze({kind:"window-title",match:"exact",text});
+  }
+  return undefined;
 }
 
 function normalizeContract(raw,source="unknown"){
