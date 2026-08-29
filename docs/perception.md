@@ -106,7 +106,7 @@ Session `cu-perception-p2a-local-ocr-discovery-s02`, evidence commit `9bf876dd35
 
 The provider was local, used no external account or network API, received image bytes in memory, and did not persist or log frame payloads, recognized text or coordinates. It performed no input action.
 
-macOS Vision remains a PoC provider, not a built-in Computer Use dependency. Authoritative evidence is recorded in `docs/evidence/perception-p2a-local-ocr-discovery-physical.md`.
+macOS Vision remains a PoC provider at P2A; packaging it as an optional product provider is a later P5D concern. Authoritative evidence is recorded in `docs/evidence/perception-p2a-local-ocr-discovery-physical.md`.
 
 ## P2B — provider-neutral text-region contract
 
@@ -213,22 +213,105 @@ The public execution path was physically validated in session `cu-perception-p4-
 
 This closes the first physically validated end-to-end visual fallback path on the reference Mac: capture → mapping → provider-neutral interpretation → deterministic target resolution → explicit fallback authorization → real Computer Control delivery → independent post-action verification. The result remains deliberately narrow to the validated scope rather than a claim of general UI understanding.
 
+## P5A — visual fallback coordinator
+
+Status: `PHYSICALLY_VALIDATED` on the reference Mac.
+
+`app/perception-action-coordinator.js` exposes:
+
+```js
+runVisualTextFallback({
+  provider,
+  targetQuery,
+  actionRequest,
+  policy,
+  postcondition,
+  observeAfterDelivery
+}, technicalDeps)
+```
+
+The coordinator is composition-only. It executes P1B → P2B → P3A → P3B → P4 and does not choose a provider, decide whether a semantic failure is visually eligible, invent a visual target/postcondition, alter planner semantics or bypass Computer Control.
+
+The public coordinator path was physically validated in session `cu-perception-p5a-visual-fallback-coordinator-public-s01`, evidence commit `8076ddeaa3ac061e5cc1fb745aa97e1f9badb0c3`, against Computer Use runtime `cc9e26e87aa83239378d466d64879229fe2302bc` and Computer Control `e3a3f13d66546cf8f0fca50075bd4607c2c3d003`. `CLICK_POSTED` remained delivery only and `VERIFIED_SUCCESS` required fresh independent post-action evidence. See `docs/evidence/perception-p5a-visual-fallback-coordinator-public-physical.md`.
+
+## P5B — semantic-to-visual eligibility
+
+Status: `CONTRACT_VALIDATED`.
+
+`app/semantic-visual-fallback-eligibility.js` defines the pure structured boundary for whether a semantic failure may be considered for visual fallback. The initial eligible codes are exactly:
+
+```text
+NO_SEMANTIC_TARGET
+SURFACE_NOT_OBSERVABLE
+```
+
+Readiness, permission/backend, semantic action-delivery, semantic verification, internal-exception and invalid input/precondition failures remain visually ineligible. Unknown or malformed result codes fail closed. Free-form `error` text is not parsed for this decision.
+
+Authoritative contract evidence is session `cu-perception-p5b-semantic-visual-eligibility-contract-s02`, evidence commit `cbc88158c4cefd7a32ee3acec6e0424eb1a8f1ec`, against Computer Use runtime `28c654d51c1014ee826dcf24f42b6758dc67a721`. See `docs/evidence/perception-p5b-semantic-visual-eligibility-contract.md`.
+
+## P5C — OPEN semantic-first executor integration
+
+Status: `PHYSICALLY_VALIDATED` on the reference Mac.
+
+`app/open-semantic-first.js` and `app/executors.js` integrate only `OPEN(target)` at this checkpoint.
+
+Required and physically proven behavior is:
+
+1. semantic resolution/action runs first;
+2. semantic success returns without running P5A or visual perception;
+3. only a structured P5B-eligible semantic observability gap may reach the visual handoff;
+4. visual handoff requires explicit `allowVisualFallback = true`;
+5. exact visual target and exact postcondition come from deterministic execution context, not planner invention;
+6. planner output contains no provider, visual query, postcondition or coordinates;
+7. visual fallback invokes P5A;
+8. success is accepted only from independent post-action evidence.
+
+The semantic branch also preserves `delivery != success`. After click delivery, Computer Use takes a fresh snapshot, re-resolves the target and obtains fresh normalized target state through Computer Control `ui.describe`. A selected semantic control or an independently observed matching window-title consequence may verify the OPEN; focus or event delivery alone does not.
+
+The authoritative physical session is `cu-perception-p5c-open-semantic-first-public-s08`, evidence commit `9195ae930f87f9804052e5024cb406b1488a747b`, against Computer Use runtime `8f21dd520356fc30e147e17adfff2c7567f36b83`, Computer Control `e3a3f13d66546cf8f0fca50075bd4607c2c3d003`, frozen test source `21c00a22c28d2ac30841eb0afcb56bba3f273aaf`, tested PoC SHA `3de353c9b307c60d2a6d5736a9253c45c6137a64`. The session completed 6 PASS / 0 FAIL / 0 BLOCKED.
+
+The semantic path proved `visualProviderCalls = 0`. The visual path began from structured `NO_SEMANTIC_TARGET`; real Computer Control delivery produced `CLICK_POSTED` while remaining non-success, and only the independent exact postcondition produced `VERIFIED_SUCCESS`. Cleanup and product-tree cleanliness passed. See `docs/evidence/perception-p5c-open-semantic-first-public-physical.md`.
+
+P5C does not perform provider discovery/selection and does not wire visual fallback into the normal agent loop. Those are P5D/P5E respectively.
+
+## P5D — concrete perception-provider delivery/selection
+
+Status: `ACTIVE`.
+
+P5D adds a Computer Use-owned selection boundary around concrete perception providers while preserving P2B unchanged. The application `provider-manager.js` is not the perception-provider manager: application Provider descriptors solve application identity/activation, whereas perception providers expose interpretation capabilities.
+
+Fixed P5D requirements:
+
+- descriptor exposes `id`, `locality`, capabilities and explicit availability;
+- selection is deterministic and capability/locality-driven;
+- local is the default requested locality; remote use must not happen as a silent fallback;
+- provider selection does not execute `observe()` and is independently testable from OCR correctness;
+- no mandatory network/account/cloud API is introduced;
+- macOS Vision may be the first optional local `text-region` implementation;
+- P2B remains provider-neutral;
+- Computer Control remains provider-free;
+- normal agent-loop wiring remains deferred to P5E.
+
 ## Interpretation, target, policy, execution and verification boundary
 
-A visual observation is not a semantic element identity and is not proof that an action will succeed. P2 adds perception observations. P3 resolves a target and evaluates whether an explicit low-level fallback may be planned. P4 executes that plan only through Computer Control, and success remains contingent on a separate post-action observation.
+A visual observation is not a semantic element identity and is not proof that an action will succeed. P2 adds perception observations. P3 resolves a target and evaluates whether an explicit low-level fallback may be planned. P4 executes that plan only through Computer Control, and success remains contingent on a separate post-action observation. P5A composes these stages; P5B decides structured eligibility; P5C proves semantic-first executor integration. P5D chooses a concrete provider but does not change what its observations mean.
 
 The preferred execution order remains:
 
 1. use structured semantic Computer Control observation/action when available;
-2. use visual perception to propose observations only when structured semantics are insufficient;
-3. resolve an observation to a target through an explicit policy boundary;
-4. authorize an explicit low-level fallback only after target/mapping policy accepts it;
-5. execute through Computer Control in a separate stage;
-6. re-observe an appropriate postcondition;
-7. claim verified success only from that independent post-action observation, never from event delivery alone.
+2. only a structured eligible semantic observability gap may consider visual perception;
+3. select an explicitly available provider in Computer Use;
+4. use visual perception to propose observations only;
+5. resolve an observation to a target through an explicit policy boundary;
+6. authorize an explicit low-level fallback only after target/mapping policy accepts it;
+7. execute through Computer Control in a separate stage;
+8. re-observe an appropriate postcondition;
+9. claim verified success only from independent post-action evidence, never from event delivery alone.
 
 ## Privacy and persistence
 
-Screen pixels and recognized text may contain sensitive information. P1/P2/P3/P4 keep frame payloads, provider observations, target-resolution data, action-policy plans and postcondition evaluation in memory and do not themselves write screenshots, derived images, OCR text or frame payloads to disk or logs.
+Screen pixels and recognized text may contain sensitive information. P1–P5 keep frame payloads, provider observations, target-resolution data, action-policy plans and postcondition evaluation in memory and do not themselves write screenshots, derived images, OCR text or frame payloads to ordinary evidence/logs.
+
+An optional concrete provider may compile/cache non-sensitive executable helper code locally, but frame bytes, OCR payloads and target/action coordinates must remain ephemeral.
 
 Callers must not log `dataBase64`, decoded frame bytes, recognized text, target coordinates, action-plan coordinates, or postcondition coordinates as ordinary diagnostics.
