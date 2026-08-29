@@ -1,6 +1,6 @@
 # Visual fallback orchestration plan
 
-Status: P1–P4, P5A and P5C are physically validated; P5B is contract-validated; P5D is the active checkpoint.
+Status: P1–P4, P5A, P5C and P5D are physically validated; P5B is contract-validated; P5E is the active checkpoint.
 
 This document fixes the implementation sequence for integrating visual fallback without weakening semantic-first behavior. Detailed perception/action contracts remain in `docs/perception.md`; operational resume state is in `docs/handoff.md`.
 
@@ -133,46 +133,46 @@ Historical P5C failed sessions s01–s07 remain immutable. See `docs/evidence/pe
 
 ## P5D — concrete perception-provider delivery and selection
 
-Status: `ACTIVE`.
+Status: `PHYSICALLY_VALIDATED` on the reference Mac.
 
-Goal: make an actual local perception provider discoverable/selectable by Computer Use without embedding provider-specific assumptions in P2B/P3/P4 or Computer Control.
+Computer Use now owns a perception-provider discovery/selection boundary that is separate from application provider discovery. `app/perception-provider-manager.js` selects providers deterministically from explicit descriptors using capability, locality and availability. Selection never invokes `observe()` and does not silently substitute a remote provider for an unavailable local provider.
 
-Fixed requirements:
+The first concrete provider is the optional local macOS Vision `text-region` adapter under `app/perception-providers/`. Its descriptor declares explicit availability and no required network, account or cloud API. P2B remains provider-neutral and Computer Control remains provider-free.
 
-- Computer Use owns provider discovery and selection.
-- The perception-provider manager is separate from the existing application `provider-manager.js` unless evidence proves the contracts are actually equivalent.
-- Provider descriptors retain `id`, `locality`, capabilities and explicit availability.
-- Selection is deterministic and capability-driven.
-- P2B remains provider-neutral and its observation schema is not broadened merely for packaging convenience.
-- No mandatory network/account/cloud API dependency is introduced.
-- A local macOS Vision adapter may be the first optional concrete provider.
-- Computer Control remains provider-free.
-- Provider selection must be testable independently of OCR correctness, target resolution and action execution.
-- P5D does not yet wire normal agent-loop visual fallback; that remains P5E.
+Authoritative validation:
 
-The first validation should prove that an available local `text-region` provider can be described, discovered and deterministically selected, while unavailable/unsupported providers fail closed. Physical validation should establish real local availability/selection independently of whether a particular screenshot OCR result is correct.
+- session: `cu-perception-p5d-provider-selection-public-s01`
+- evidence: `3d48e86a09f70d37fad9765d0694294cdc13f2ba`
+- Computer Use runtime: `2262237e92965d9e5171a9688694f13d2bc183aa`
+- Computer Control: `e3a3f13d66546cf8f0fca50075bd4607c2c3d003`
+- frozen test source: `42305c85cbec46d7e43fcf429715b1d583f4018c`
+- tested PoC SHA: `4f04d6b0225d0a456d53e1206ff5bf319da605f8`
+- result: 7 PASS / 0 FAIL / 0 BLOCKED
+
+The physical session proved real local availability and deterministic selection for `text-region/local` with `observeCalls = 0`. It also proved that selection itself performs no frame capture, OCR, target resolution or action execution and that no implicit remote fallback or mandatory network/account/cloud dependency is introduced.
+
+See `docs/evidence/perception-p5d-provider-selection-public-physical.md`.
 
 ## P5E — first normal agent-loop end-to-end task
 
-Status: `PLANNED`, blocked on P5D.
+Status: `ACTIVE`.
 
 Goal: validate visual fallback through the normal Computer Use orchestration rather than a dedicated executor harness.
 
-Prerequisites: P5A–P5D validated as appropriate.
+P5E must demonstrate:
 
-The first supported task must demonstrate:
-
-1. planner emits the existing semantic intent, not a low-level visual instruction;
-2. executor attempts semantic operation first;
-3. eligible capability gap is classified structurally;
-4. provider selection resolves a local visual provider;
-5. P5A runs only after explicit fallback authorization;
+1. planner output remains the existing semantic intent; no coordinates, provider id or fabricated postcondition enter planner output;
+2. the normal agent-loop/executor path attempts semantic execution first;
+3. only a structured P5B-eligible semantic observability gap may continue toward visual fallback;
+4. Computer Use selects an available local provider through P5D;
+5. P5A runs only with explicit fallback authorization and deterministic caller/skill target + postcondition;
 6. real Computer Control delivery occurs;
-7. independent post-action observation verifies the deterministic postcondition;
-8. agent-loop reports success only from verified task outcome;
-9. product trees and sensitive-data logging policy remain clean.
+7. `CLICK_POSTED` remains delivery only;
+8. a fresh independent post-action observation must verify the deterministic postcondition before task success;
+9. the normal agent-loop reports success only from that verified result;
+10. product trees and sensitive-data logging policy remain clean.
 
-This is the checkpoint at which visual fallback becomes a normal orchestrated Computer Use capability.
+P5E should keep the first normal task narrow and test-owned. The integration must not turn visual fallback into a generic retry mechanism or add mandatory perception dependencies for ordinary semantic tasks.
 
 ## Deferred hardening after P5
 
@@ -189,4 +189,4 @@ These remain separate evidence programs:
 
 ## Immediate next action
 
-Implement **P5D concrete perception-provider delivery/selection boundary**. Keep provider selection inside Computer Use, preserve P2B unchanged, validate selection independently from OCR correctness, and do not wire the normal agent loop until P5D is complete.
+Implement **P5E first normal agent-loop end-to-end task**. Wire only the minimum deterministic execution context needed for the bounded OPEN scenario; keep the planner semantic, select the provider in Computer Use, preserve explicit authorization, and promote only after an immutable physical PASS.
