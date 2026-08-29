@@ -68,10 +68,14 @@ let results = (request.results ?? []).compactMap { observation -> Observation? i
     guard !text.isEmpty else { return nil }
 
     let box = observation.boundingBox
-    let x = box.minX * Double(frameWidth)
-    let y = (1.0 - box.maxY) * Double(frameHeight)
-    let width = box.width * Double(frameWidth)
-    let height = box.height * Double(frameHeight)
+    let minX = Double(box.minX)
+    let maxY = Double(box.maxY)
+    let boxWidth = Double(box.width)
+    let boxHeight = Double(box.height)
+    let x = minX * Double(frameWidth)
+    let y = (1.0 - maxY) * Double(frameHeight)
+    let width = boxWidth * Double(frameWidth)
+    let height = boxHeight * Double(frameHeight)
 
     return Observation(
         kind: "text-region",
