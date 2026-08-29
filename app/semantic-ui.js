@@ -41,6 +41,7 @@ function parseSnapshot(snapshot) {
     const name = m[3] || "";
     const disabled = /\[disabled\]/.test(raw);
     const selected = /\[selected\]/.test(raw);
+    const checked = /\[checked\]/.test(raw);
     const focused = /\[focused\]/.test(raw);
 
     while (stack.length && stack[stack.length - 1].indent >= indent) {
@@ -49,7 +50,7 @@ function parseSnapshot(snapshot) {
     const parent = stack.length ? stack[stack.length - 1] : null;
 
     const node = {
-      indent, ref, role, name, disabled, selected, focused,
+      indent, ref, role, name, disabled, selected, checked, focused,
       parent,
       raw
     };
@@ -233,6 +234,17 @@ function findSearchControl(snapshot) {
   return anyField[0] || null;
 }
 
+function nodeSemanticallySelected(node) {
+  if (!node) return false;
+  if (node.selected) return true;
+
+  const role = normText(node.role);
+  return Boolean(
+    node.checked &&
+    (role === "radio" || role === "radio-button" || role === "checkbox")
+  );
+}
+
 function semanticTargetSelected(snapshot, target) {
   const wanted = normText(target);
   if (!wanted) return false;
@@ -243,10 +255,10 @@ function semanticTargetSelected(snapshot, target) {
   );
 
   for (const n of matches) {
-    if (n.selected) return true;
+    if (nodeSemanticallySelected(n)) return true;
     let p = n.parent;
     while (p) {
-      if (p.selected) return true;
+      if (nodeSemanticallySelected(p)) return true;
       p = p.parent;
     }
   }
