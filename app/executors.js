@@ -11,6 +11,12 @@ const {
   semanticTargetSelected,
   resultCandidates,
 } = require("./semantic-ui");
+const {
+  SEMANTIC_RESULT_CODES,
+} = require("./semantic-visual-fallback-eligibility");
+const {
+  executeOpenSemanticFirst,
+} = require("./open-semantic-first");
 const { ensureReady, waitUntilSnapshotCondition, waitUntilChanged, waitStable, getCurrentWindow, snapshot, get, focus, press, click, setText, clear } = require("./computer-control-external");
 
 async function observeKnownApp(currentApp, previousSnapshot = "") {
@@ -325,17 +331,34 @@ async function executeOpenResultIntent(intent, state) {
   };
 }
 
-async function executeOpenIntent(intent, state) {
+async function executeOpenSemanticIntent(intent, state) {
   if (!state.currentApp || !state.snapshot) {
-    return {ok:false, error:"OPEN requires an active application snapshot"};
+    return {
+      ok:false,
+      code:SEMANTIC_RESULT_CODES.INVALID_PRECONDITION,
+      recoveryPolicy:"NONE",
+      error:"OPEN requires an active application snapshot",
+    };
   }
 
   const target = String(intent.target || "").trim();
-  if (!target) return {ok:false, error:"OPEN has no target"};
+  if (!target) {
+    return {
+      ok:false,
+      code:SEMANTIC_RESULT_CODES.INVALID_INTENT,
+      recoveryPolicy:"NONE",
+      error:"OPEN has no target",
+    };
+  }
 
   const resolved = resolveSemanticTarget(state.snapshot, target, null, "CLICK", state.currentApp);
   if (!resolved.ok) {
-    return {ok:false, error:`target resolution failed: ${resolved.error}`};
+    return {
+      ok:false,
+      code:resolved.code || SEMANTIC_RESULT_CODES.INTERNAL_EXCEPTION,
+      recoveryPolicy:"NONE",
+      error:`target resolution failed: ${resolved.error}`,
+    };
   }
 
   const clicked = click({
@@ -348,6 +371,8 @@ async function executeOpenIntent(intent, state) {
   if (!clicked.ok) {
     return {
       ok:false,
+      code:SEMANTIC_RESULT_CODES.SEMANTIC_ACTION_DELIVERY_FAILED,
+      recoveryPolicy:"NONE",
       error:`OPEN click failed: ${clicked.error}: ${clicked.detail || ""}`
     };
   }
@@ -360,7 +385,12 @@ async function executeOpenIntent(intent, state) {
   try {
     observed = await observeKnownApp(state.currentApp, state.snapshot);
   } catch (e) {
-    return {ok:false, error:`post-OPEN snapshot failed: ${e.message}`};
+    return {
+      ok:false,
+      code:SEMANTIC_RESULT_CODES.SEMANTIC_POSTCONDITION_VERIFICATION_FAILED,
+      recoveryPolicy:"NONE",
+      error:`post-OPEN snapshot failed: ${e.message}`,
+    };
   }
 
   const currentWindow = getCurrentWindow({
@@ -380,6 +410,8 @@ async function executeOpenIntent(intent, state) {
 
   return {
     ok:verified,
+    code:verified ? undefined : SEMANTIC_RESULT_CODES.SEMANTIC_POSTCONDITION_VERIFICATION_FAILED,
+    recoveryPolicy:verified ? undefined : "NONE",
     currentApp:state.currentApp,
     snapshot:observed.snapshot,
     changed:observed.changed,
@@ -398,6 +430,24 @@ async function executeOpenIntent(intent, state) {
       `titleMatches=${titleMatches}; ${actionDetail}`,
     error:verified ? null : "OPEN verification failed"
   };
+}
+
+async function executeOpenIntent(
+  intent,
+  state,
+  executionContext = {},
+  dependencies = {}
+) {
+  return executeOpenSemanticFirst({
+    intent,
+    state,
+    executionContext,
+    executeSemanticOpen:
+      dependencies.executeSemanticOpen || executeOpenSemanticIntent,
+  },{
+    classifyEligibility:dependencies.classifyEligibility,
+    runVisualFallback:dependencies.runVisualFallback,
+  });
 }
 
 async function executeNewDocumentIntent(intent, state) {
@@ -650,14 +700,14 @@ async function executeClearIntent(intent, state) {
   };
 }
 
-async function executeIntent(intent, state) {
+async function executeIntent(intent, state, executionContext = {}) {
   switch (intent.intent) {
     case "ACTIVATE_APP":
       return executeActivateIntent(intent, state);
     case "SEARCH":
       return executeSearchIntent(intent, state);
     case "OPEN":
-      return executeOpenIntent(intent, state);
+      return executeOpenIntent(intent, state, executionContext);
     case "OPEN_RESULT":
       return executeOpenResultIntent(intent, state);
     case "NEW_DOCUMENT":
@@ -677,6 +727,7 @@ module.exports = {
   executeActivateIntent,
   executeSearchIntent,
   executeOpenResultIntent,
+  executeOpenSemanticIntent,
   executeOpenIntent,
   executeNewDocumentIntent,
   executeInputIntent,
