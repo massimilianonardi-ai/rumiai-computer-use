@@ -10,6 +10,9 @@ const {
   interpretMappedVisualFrame,
 } = require("./perception-provider");
 const {
+  getCurrentWindow,
+} = require("./computer-control-external");
+const {
   validateSemanticSurfacePrecondition,
   evaluateSemanticSurfacePrecondition,
 } = require("./visual-fallback-surface-precondition");
@@ -102,6 +105,7 @@ function resolveOpenVisualFallbackExecutionContext(
   {intent, contract, runtimeContext = {}} = {},
   {
     verifySurfacePrecondition = evaluateSemanticSurfacePrecondition,
+    observeCurrentWindow = ({app}) => getCurrentWindow({app}),
     selectProvider = selectPerceptionProvider,
     providerOptions = {},
     acquireMappedFrame = acquireMappedPrimaryVisualFrame,
@@ -113,9 +117,27 @@ function resolveOpenVisualFallbackExecutionContext(
 
   let surfaceMetadata = null;
   if (validated.value.surfacePrecondition) {
+    let surfaceRuntimeContext = runtimeContext;
+    if (validated.value.surfacePrecondition.kind === "window-title") {
+      const application = String(runtimeContext?.state?.currentApp || "").trim();
+      if (!application) return failure("SURFACE_PRECONDITION_APPLICATION_REQUIRED");
+
+      const observedWindow = observeCurrentWindow({app:application});
+      if (!observedWindow?.ok || !observedWindow.window) {
+        return failure(
+          "SURFACE_PRECONDITION_WINDOW_OBSERVATION_FAILED",
+          observedWindow?.detail || observedWindow?.error || observedWindow?.state || null
+        );
+      }
+      surfaceRuntimeContext = {
+        ...runtimeContext,
+        currentWindow:observedWindow.window,
+      };
+    }
+
     const surface = verifySurfacePrecondition(
       validated.value.surfacePrecondition,
-      runtimeContext
+      surfaceRuntimeContext
     );
     if (!surface?.ok) {
       return failure(
