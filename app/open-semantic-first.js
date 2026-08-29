@@ -74,6 +74,43 @@ function validateOpenVisualFallbackContext(context, target) {
   };
 }
 
+async function resolveEligibleVisualFallbackContext(executionContext, args) {
+  if (typeof executionContext?.resolveVisualFallbackContext !== "function") {
+    return {
+      ok:true,
+      executionContext,
+      metadata:null,
+    };
+  }
+
+  let resolved;
+  try {
+    resolved = await Promise.resolve(
+      executionContext.resolveVisualFallbackContext(args)
+    );
+  } catch (error) {
+    return {
+      ok:false,
+      reason:"VISUAL_FALLBACK_CONTEXT_RESOLUTION_EXCEPTION",
+      detail:error?.message || String(error),
+    };
+  }
+
+  if (!resolved || resolved.ok === false) {
+    return {
+      ok:false,
+      reason:resolved?.reason || resolved?.error || "VISUAL_FALLBACK_CONTEXT_RESOLUTION_FAILED",
+      detail:resolved?.detail || null,
+    };
+  }
+
+  return {
+    ok:true,
+    executionContext:resolved.executionContext || resolved.context || resolved,
+    metadata:resolved.metadata || null,
+  };
+}
+
 async function executeOpenSemanticFirst(
   {
     intent,
@@ -110,8 +147,27 @@ async function executeOpenSemanticFirst(
     };
   }
 
-  const validated = validateOpenVisualFallbackContext(
+  const resolvedContext = await resolveEligibleVisualFallbackContext(
     executionContext,
+    {intent, state, semanticResult, eligibility}
+  );
+
+  if (!resolvedContext.ok) {
+    return {
+      ...semanticResult,
+      recoveryPolicy:"NONE",
+      executionPath:"semantic",
+      visualFallbackEligibility:eligibility,
+      visualFallback:{
+        state:"NOT_RUN",
+        reason:resolvedContext.reason,
+        ...(resolvedContext.detail ? {detail:resolvedContext.detail} : {}),
+      },
+    };
+  }
+
+  const validated = validateOpenVisualFallbackContext(
+    resolvedContext.executionContext,
     intent?.target
   );
 
@@ -139,6 +195,7 @@ async function executeOpenSemanticFirst(
       executionPath:"visual-fallback",
       visualFallbackEligibility:eligibility,
       visualFallback:{state:"FAILED", reason:"COORDINATOR_EXCEPTION"},
+      ...(resolvedContext.metadata ? {visualFallbackProviderSelection:resolvedContext.metadata} : {}),
       error:`OPEN visual fallback coordinator exception: ${error?.message || error}`,
     };
   }
@@ -158,6 +215,7 @@ async function executeOpenSemanticFirst(
       state:visualResult?.state || "UNKNOWN",
       verified,
     },
+    ...(resolvedContext.metadata ? {visualFallbackProviderSelection:resolvedContext.metadata} : {}),
     delivery:visualResult?.delivery || null,
     semanticConsequence:visualResult?.semanticConsequence || null,
     taskOutcome:visualResult?.taskOutcome || null,
@@ -183,5 +241,6 @@ async function executeOpenSemanticFirst(
 
 module.exports = {
   validateOpenVisualFallbackContext,
+  resolveEligibleVisualFallbackContext,
   executeOpenSemanticFirst,
 };
