@@ -179,6 +179,8 @@ function selectScopedVisualFallbackContractsForPlan(plan,options={}){
         matches:[prior,selection.descriptor.id].sort(),
       };
     }
+    if(prior===selection.descriptor.id)continue;
+
     selectedTargets.set(target,selection.descriptor.id);
     selected.push(selection.contract);
     descriptors.push(selection.descriptor);
