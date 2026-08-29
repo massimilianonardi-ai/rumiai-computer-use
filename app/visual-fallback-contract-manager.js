@@ -138,10 +138,66 @@ function selectVisualFallbackCallerContract(intent,state={},options={}){
   };
 }
 
+function selectScopedVisualFallbackContractsForPlan(plan,options={}){
+  if(!Array.isArray(plan)){
+    return {ok:false,state:"INVALID_SEMANTIC_PLAN",error:"INVALID_SEMANTIC_PLAN",recoveryPolicy:"NONE"};
+  }
+  const scopeId=normalizeText(options.scopeId);
+  if(!scopeId){
+    return {ok:false,state:"VISUAL_FALLBACK_SCOPE_REQUIRED",error:"VISUAL_FALLBACK_SCOPE_REQUIRED",recoveryPolicy:"NONE"};
+  }
+
+  let currentApp=normalizeText(options.initialApplication);
+  const selected=[];
+  const descriptors=[];
+  const selectedTargets=new Map();
+
+  for(const step of plan){
+    if(step?.intent==="ACTIVATE_APP"&&normalizeText(step.app)){
+      currentApp=normalizeText(step.app);
+      continue;
+    }
+    if(step?.intent!=="OPEN")continue;
+
+    const selection=selectVisualFallbackCallerContract(
+      step,
+      {currentApp},
+      {...options,scopeId,requireScope:true}
+    );
+    if(!selection.ok)return selection;
+    if(selection.state!=="VISUAL_FALLBACK_CONTRACT_SELECTED")continue;
+
+    const target=normalizeText(step.target);
+    const prior=selectedTargets.get(target);
+    if(prior&&prior!==selection.descriptor.id){
+      return {
+        ok:false,
+        state:"VISUAL_FALLBACK_PLAN_TARGET_AMBIGUOUS",
+        error:"VISUAL_FALLBACK_PLAN_TARGET_AMBIGUOUS",
+        recoveryPolicy:"NONE",
+        target,
+        matches:[prior,selection.descriptor.id].sort(),
+      };
+    }
+    selectedTargets.set(target,selection.descriptor.id);
+    selected.push(selection.contract);
+    descriptors.push(selection.descriptor);
+  }
+
+  return {
+    ok:true,
+    state:selected.length?"VISUAL_FALLBACK_PLAN_CONTRACTS_SELECTED":"NO_VISUAL_FALLBACK_CONTRACT",
+    scopeId,
+    contracts:selected,
+    descriptors,
+  };
+}
+
 module.exports={
   CONTRACT_DIR,
   normalizeContract,
   loadVisualFallbackContracts,
   contractToExecutionContract,
   selectVisualFallbackCallerContract,
+  selectScopedVisualFallbackContractsForPlan,
 };
