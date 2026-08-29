@@ -6,16 +6,16 @@ Repository state plus immutable evidence commits are authoritative when chat his
 
 ## Current authoritative state
 
-P5 is **complete for the initial narrow scope** and P6A is now **PHYSICALLY_VALIDATED**.
+P5 is **complete for the initial narrow scope**. P6A is **PHYSICALLY_VALIDATED**. P6B is **PHYSICALLY_OBSERVED**. P6C is the active checkpoint.
 
-- Current P6A Computer Use runtime: `5e4daf5ebf352535653bfb21a559026238966a20`.
+- Last physically observed P6B Computer Use SHA: `3a3148cdf89735d2d46d208bbe69dc1d26722e3b`.
 - Computer Control dependency: `e3a3f13d66546cf8f0fca50075bd4607c2c3d003`.
-- P6A session: `cu-perception-p6a-caller-contract-registry-public-s01`.
-- P6A evidence: `21ad01e93a5de4e5276b49c193269a26ad66b164`.
-- P6A frozen test source: `66455683f3088b6cfb7fa9e1a49274a9c08269f5`.
-- P6A tested PoC SHA: `380c6f756dda2a2e798a7987e1d3aff2059060de`.
-- P6A result: 9 PASS / 0 FAIL / 0 BLOCKED.
-- Active checkpoint: **P6B real-application contract discovery**.
+- P6B session: `cu-perception-p6b-safari-canvas-discovery-public-s06`.
+- P6B evidence: `e8a2899c58c5e6d3725d4457af18aefc25923580`.
+- P6B frozen test source: `6d826092b93973905fa6f2c7f8ac1c1d68a92a31`.
+- P6B tested PoC SHA: `0ae7c087bf0072aac0c5f0d180b8d83933022a3c`.
+- P6B result: 10 PASS / 0 FAIL / 0 BLOCKED.
+- Active checkpoint: **P6C bounded evidence-backed caller-contract integration**.
 
 ## Non-negotiable invariants
 
@@ -55,60 +55,67 @@ semantic planner output
 
 ## P6A — caller-contract registry
 
-`app/visual-fallback-contract-manager.js` is a local deterministic registry for caller-owned execution knowledge. It is intentionally separate from competence skills.
+`app/visual-fallback-contract-manager.js` is a local deterministic registry for caller-owned execution knowledge, intentionally separate from competence skills and provider selection.
 
-A registry entry is matched fail-closed on:
+A registry entry matches fail-closed on:
 
 ```text
 application + intent=OPEN + exact target
 ```
 
-It may provide:
+It may provide exact target, exact deterministic postcondition, explicit visual-fallback authorization, the validated primary-display left-click shape and declarative provider requirements. It may not provide coordinates, native identities, a concrete provider object, generic fallback authorization or task success.
 
-- exact visual target;
-- exact deterministic postcondition;
-- explicit `allowVisualFallback=true`;
-- the already validated primary-display left-click action shape;
-- declarative perception-provider requirements.
-
-It may not provide:
-
-- action coordinates;
-- native element identities;
-- a concrete provider object;
-- generic fallback authorization;
-- task success.
-
-P6A physical evidence proved that the selected local JSON contract entered normal `runTask`, the planner stayed semantic, semantic `NO_SEMANTIC_TARGET` occurred first, provider selection remained lazy, `CLICK_POSTED` remained delivery-only, and only independent post-action evidence produced `VERIFIED_SUCCESS`.
+Authoritative P6A evidence: `21ad01e93a5de4e5276b49c193269a26ad66b164`.
 
 See `docs/evidence/perception-p6a-caller-contract-registry-public-physical.md`.
 
-## Why P6A is not yet a built-in application skill
+## P6B — real Safari canvas discovery
 
-Existing competence skills under `skills/` currently validate application activation/document editing capabilities. There is no previously validated real application skill that realizes the P5 `OPEN` visual-fallback contract. Do not attach visual target/postcondition knowledge to TextEdit, Pulsar, Finder or System Settings without evidence.
+Status: `PHYSICALLY_OBSERVED`.
 
-System Settings is specifically not the first discovery target because historical P5C evidence showed its current semantic snapshot boundary can fail before OPEN execution.
+Authoritative evidence: `e8a2899c58c5e6d3725d4457af18aefc25923580`.
 
-## Active checkpoint: P6B real-application contract discovery
+The real Safari application requested a loopback-only test-owned page before perception. The visible control existed only as text drawn into an HTML canvas.
 
-Use an actual supported application and a controlled application surface to discover a candidate contract before shipping it as built-in knowledge.
+The session physically proved:
 
-First candidate: Safari, which already has a product application Provider. Use a local test-owned page rendered in Safari with a canvas-drawn exact target whose click deterministically changes the canvas to an exact postcondition.
+1. Safari served/rendered the intended local page (`requests=1`, `eventLoopServed=true`).
+2. A fresh semantic snapshot could not resolve the canvas target and yielded structured `NO_SEMANTIC_TARGET`.
+3. P5D selected `rumiai.local.macos-vision-text-region`.
+4. P2B/P3A resolved exactly one target under the unchanged exact-text-single-match policy.
+5. The deterministic postcondition was absent before action.
+6. Real Computer Control returned canonical `CLICK_POSTED` with `semanticConsequenceVerified=false`.
+7. A fresh independent post-action visual observation produced the deterministic postcondition.
+8. Only that observation produced `VERIFIED_SUCCESS`.
+9. Screenshot bytes, OCR payloads and coordinates were not logged.
+10. Pointer, Safari, loopback server, runtime/cache and temporary resources were cleaned up and product trees stayed clean.
 
-P6B discovery must prove, on the real Safari application:
+Historical P6B s01–s05 failures remain immutable. They isolated PoC oracle and bootstrap/event-loop defects and were not rewritten.
 
-1. Safari was not already running; otherwise the test blocks without disturbing user state.
-2. Safari can be launched/activated and observed by the current external Computer Control boundary.
-3. The canvas target is visible in the captured pixels but does not resolve as a semantic AX target (`NO_SEMANTIC_TARGET`).
-4. P5D selects the real local macOS Vision provider.
-5. P2B/P3A resolve exactly one visual target.
-6. Explicit P3B authorization allows only the validated primary-display left click.
-7. Real Computer Control delivery returns canonical `CLICK_POSTED` and does not claim semantic consequence.
-8. A fresh post-action capture observes the exact new canvas postcondition and no longer observes the initial target.
-9. No screenshot/OCR/coordinates are persisted in evidence.
-10. Safari/test resources/runtime/pointer are cleaned up and product trees stay clean.
+See `docs/evidence/perception-p6b-safari-canvas-discovery-public-physical.md`.
 
-P6B discovery is **not** permission to ship a generic Safari visual fallback. Promotion to built-in product knowledge occurs only after this evidence and only for a contract whose scope is explicitly represented.
+### Important non-claim
+
+P6B does **not** authorize generic Safari or arbitrary web visual fallback. No built-in Safari registry entry existed during the discovery.
+
+## Active checkpoint: P6C bounded caller-contract integration
+
+P6C may promote product caller knowledge only for an explicitly bounded application/task contract whose semantics are no broader than the P6B evidence.
+
+Required properties:
+
+- caller/registry knowledge remains separate from planner output;
+- exact application + intent + target selection remains fail-closed;
+- no coordinates or provider objects are stored;
+- semantic execution still runs first;
+- only P5B-eligible gaps may resolve the lazy visual execution context;
+- P5D provider selection remains Computer Use-owned and lazy;
+- P5A remains the visual coordinator;
+- `CLICK_POSTED` never becomes success by itself;
+- independent post-action evidence remains mandatory;
+- absence of a matching bounded contract means no visual fallback.
+
+Do not infer a generic contract from the Safari application name alone. The built-in scope must encode the actual evidence-backed task/surface identity or remain caller-supplied until that identity can be represented safely.
 
 ## Reference paths
 
@@ -133,4 +140,4 @@ For every fresh manual terminal session, the first command must be `cd` into the
 7. Inspect remote evidence, not only terminal summary.
 8. Promote only the claims physically evidenced.
 
-Immediate next checkpoint: **P6B Safari real-application visual contract discovery**.
+Immediate next checkpoint: **P6C bounded evidence-backed caller-contract integration**.
