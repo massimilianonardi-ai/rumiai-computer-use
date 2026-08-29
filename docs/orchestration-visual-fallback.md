@@ -1,6 +1,6 @@
 # Visual fallback orchestration plan
 
-Status: P1–P4 physically validated; P5 not started.
+Status: P1–P4 and P5A physically validated; P5B is the active checkpoint.
 
 This document fixes the next implementation sequence after completion of the first physically validated visual fallback path. The detailed perception/action contracts remain in `docs/perception.md`; operational resume state is in `docs/handoff.md`.
 
@@ -38,47 +38,17 @@ P5 integrates the validated capability without changing the architectural rule t
 
 ## P5A — visual fallback coordinator
 
+Status: `PHYSICALLY_VALIDATED` on the reference Mac.
+
 Goal: compose the existing P1B/P2B/P3A/P3B/P4 modules into one explicit Computer Use operation while retaining their independent contracts.
 
-Create a small coordinator module, conceptually:
+`app/perception-action-coordinator.js` exposes the explicit coordinator `runVisualTextFallback(...)`. It accepts an injected perception provider plus deterministic target/action/policy/postcondition inputs and composes P1B → P2B → P3A → P3B → P4 without selecting a provider, deciding semantic fallback eligibility, altering planner semantics, guessing targets or inferring postconditions.
 
-```js
-runVisualTextFallback({
-  provider,
-  targetQuery,
-  actionRequest,
-  policy,
-  postcondition,
-  observeAfterDelivery,
-})
-```
+The public coordinator path was physically validated in session `cu-perception-p5a-visual-fallback-coordinator-public-s01`, evidence commit `8076ddeaa3ac061e5cc1fb745aa97e1f9badb0c3`, against Computer Use runtime `cc9e26e87aa83239378d466d64879229fe2302bc` and Computer Control `e3a3f13d66546cf8f0fca50075bd4607c2c3d003`. Frozen test source was `aaa88a862cba2f42fcecc4b21619c5b10eceeb85`. The session completed 13 PASS / 0 FAIL / 0 BLOCKED and left both product trees clean.
 
-The exact API may be refined during implementation, but it must remain explicit and dependency-injectable.
+The physical run proved one real authorized visual click plus fresh independent post-action observation through the coordinator. `CLICK_POSTED` remained delivery only with `semanticConsequenceVerified = false`; only the independently observed deterministic postcondition produced `VERIFIED_SUCCESS`.
 
-Responsibilities:
-
-1. acquire a P1B mapped primary frame;
-2. invoke the P2B provider-neutral interpretation boundary;
-3. resolve the requested exact-text target via P3A;
-4. evaluate P3B policy;
-5. invoke P4 only if P3B returned an authorized/ready plan;
-6. return the P4 result without collapsing delivery and success states.
-
-Non-responsibilities:
-
-- provider selection;
-- semantic fallback eligibility;
-- planner intent generation;
-- target guessing/ranking;
-- postcondition inference;
-- recovery policy outside the existing stage contracts.
-
-Validation order:
-
-- deterministic contract tests with injected provider/control;
-- static boundary tests proving no backend bypass/persistence;
-- physical test using the existing test-owned visual fixture and local Vision PoC provider;
-- immutable PASS evidence before promotion.
+Authoritative promotion detail is recorded in `docs/evidence/perception-p5a-visual-fallback-coordinator-public-physical.md`.
 
 ## P5B — semantic-to-visual eligibility classification
 
@@ -189,4 +159,4 @@ These are separate evidence programs, not requirements for P5A:
 
 ## Immediate next action
 
-Start **P5A**. Do not reopen P1–P4 unless a P5 test produces evidence that an existing boundary is wrong.
+Start **P5B semantic-to-visual eligibility classification**. Do not wire visual fallback into `OPEN` until P5B's structured codes and pure eligibility classifier are independently validated.
