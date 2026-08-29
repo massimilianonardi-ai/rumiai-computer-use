@@ -17,7 +17,7 @@ const {
 const {
   executeOpenSemanticFirst,
 } = require("./open-semantic-first");
-const { ensureReady, waitUntilSnapshotCondition, waitUntilChanged, waitStable, getCurrentWindow, snapshot, get, focus, press, click, setText, clear } = require("./computer-control-external");
+const { ensureReady, waitUntilSnapshotCondition, waitUntilChanged, waitStable, getCurrentWindow, snapshot, describe, get, focus, press, click, setText, clear } = require("./computer-control-external");
 
 async function observeKnownApp(currentApp, previousSnapshot = "") {
   const observed = snapshot({
@@ -101,11 +101,6 @@ async function executeSearchIntent(intent, state) {
   let actionSeconds = written.actionSeconds || 0;
   let computerControlObserveSeconds = written.observeSeconds || 0;
 
-  // Semantics:
-  // - AX search-box controls commonly expose live/dynamic search (e.g. System Settings)
-  // - search/address text-fields commonly require an explicit submit (e.g. browser smart field)
-  //
-  // This rule is based on the control semantics, not on a Safari-specific branch.
   const looksLikeSubmitSearchField =
     control.role === "text-field" &&
     /\b(search|ricerca|cerca|smart|address|indirizz)/i.test(control.name || "");
@@ -231,8 +226,6 @@ async function executeSearchIntent(intent, state) {
     error:verified ? null : "SEARCH verification failed"
   };
 }
-
-
 
 async function executeOpenResultIntent(intent, state) {
   if (!state.currentApp || !state.snapshot) {
@@ -401,11 +394,28 @@ async function executeOpenSemanticIntent(intent, state) {
     currentWindow.ok &&
     normText(currentWindow.window?.title).includes(normText(target));
 
-  const selected = semanticTargetSelected(observed.snapshot, target);
+  const snapshotSelected = semanticTargetSelected(observed.snapshot, target);
+  const refreshed = resolveSemanticTarget(
+    observed.snapshot,
+    target,
+    null,
+    "CLICK",
+    state.currentApp
+  );
+  let described = null;
+  if (refreshed.ok) {
+    described = describe({
+      app:state.currentApp,
+      element:{ref:refreshed.ref},
+    });
+  }
+  const describedSelected = described?.ok === true && described.selected === true;
+  const selected = snapshotSelected || describedSelected;
 
   // For general navigation we require semantic evidence stronger than merely
-  // "the label is still visible". Either it became selected or the window title
-  // reflects the target.
+  // "the label is still visible". Either a fresh post-action accessibility
+  // observation proves the target selected, or the window title reflects it.
+  // Delivery/focus alone is never treated as success.
   const verified = selected || titleMatches;
 
   return {
@@ -425,6 +435,10 @@ async function executeOpenSemanticIntent(intent, state) {
       `; resolver=${resolved.method}; ` +
       `locator=${resolved.locatorDetail || "snapshot"}; ` +
       `fallback=${fallbackUsed}; selected=${selected}; ` +
+      `snapshotSelected=${snapshotSelected}; ` +
+      `describeObserved=${described?.ok === true}; ` +
+      `describedSelected=${describedSelected}; ` +
+      `describeMethod=${described?.method || "none"}; ` +
       `windowObserved=${currentWindow.ok}; ` +
       `windowMethod=${currentWindow.method || "none"}; ` +
       `titleMatches=${titleMatches}; ${actionDetail}`,
@@ -511,8 +525,6 @@ async function executeNewDocumentIntent(intent, state) {
   };
 }
 
-
-
 async function executeInputIntent(intent, state) {
   if (!state.currentApp || !state.snapshot) {
     return {ok:false, error:"INPUT requires an active application snapshot"};
@@ -521,13 +533,6 @@ async function executeInputIntent(intent, state) {
   const text = intent.text == null ? "" : String(intent.text);
   const target = String(intent.target || "").trim();
 
-  /*
-   * Executor/Skill responsibility:
-   * resolve WHAT semantic editable surface the intent refers to.
-   *
-   * Computer Control responsibility:
-   * decide HOW to set and verify the text on that resolved element.
-   */
   function resolveEditable(snapshot) {
     if (target) {
       const resolved = resolveSemanticTarget(snapshot, target, null, "FILL", state.currentApp);
@@ -720,7 +725,6 @@ async function executeIntent(intent, state, executionContext = {}) {
       return {ok:false, error:`unsupported intent ${intent.intent}`};
   }
 }
-
 
 module.exports = {
   observeKnownApp,
