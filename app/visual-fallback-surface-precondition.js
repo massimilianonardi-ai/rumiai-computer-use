@@ -97,10 +97,20 @@ function evaluateSemanticTextSurfacePrecondition(value, runtimeContext) {
   };
 }
 
+function unwrapCurrentWindowDescriptor(candidate) {
+  if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) return null;
+  if (candidate.field === "window" && candidate.value && typeof candidate.value === "object" && !Array.isArray(candidate.value)) {
+    return candidate.value;
+  }
+  return candidate;
+}
+
 function evaluateWindowTitleSurfacePrecondition(value, runtimeContext) {
+  const currentWindow = unwrapCurrentWindowDescriptor(
+    runtimeContext?.currentWindow ?? runtimeContext?.window ?? null
+  );
   const windowTitle = String(
-    runtimeContext?.currentWindow?.title ??
-    runtimeContext?.window?.title ??
+    currentWindow?.title ??
     runtimeContext?.windowTitle ??
     ""
   ).trim();
