@@ -25,13 +25,20 @@ Visual capture remains a Computer Control mechanic. Computer Use may consume
 interpretation providers, but it does not implement a second screenshot
 backend. See `docs/perception.md`.
 
+The first bounded visual fallback path P1–P4 is physically validated on the
+reference Mac, including real Computer Control click delivery followed by an
+independent post-action visual postcondition. The current operational resume
+point and immutable evidence references are in `docs/handoff.md`. The next
+implementation phase, P5 orchestration integration, is fixed in
+`docs/orchestration-visual-fallback.md`.
+
 ## Layout
 
 - `app/`: planner, orchestrator, executors, recovery, perception and external boundary.
 - `contexts/`: dynamically selected planning context.
 - `providers/`: application identities and capability declarations.
 - `skills/`: provider competence declarations.
-- `docs/`: architecture and internal contract boundaries.
+- `docs/`: architecture, handoff, evidence and internal contract boundaries.
 
 The supported portable workflow is owned by `rumiai-portable-runtime`:
 
