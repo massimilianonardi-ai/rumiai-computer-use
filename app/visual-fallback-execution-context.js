@@ -9,6 +9,10 @@ const {
 const {
   interpretMappedVisualFrame,
 } = require("./perception-provider");
+const {
+  validateSemanticSurfacePrecondition,
+  evaluateSemanticSurfacePrecondition,
+} = require("./visual-fallback-surface-precondition");
 
 function failure(reason, detail = null) {
   return {
@@ -64,6 +68,13 @@ function validateOpenVisualFallbackContract(intent, contract) {
     return failure("EXACT_VISUAL_POSTCONDITION_REQUIRED");
   }
 
+  let surfacePrecondition = null;
+  if (contract.surfacePrecondition != null) {
+    const surfaceValidation = validateSemanticSurfacePrecondition(contract.surfacePrecondition);
+    if (!surfaceValidation.ok) return surfaceValidation;
+    surfacePrecondition = surfaceValidation.value;
+  }
+
   const providerRequest = contract.providerRequest && typeof contract.providerRequest === "object"
     ? contract.providerRequest
     : {capabilities:["text-region"], locality:"local"};
@@ -75,6 +86,7 @@ function validateOpenVisualFallbackContract(intent, contract) {
       actionRequest:{...actionRequest},
       policy:{allowVisualFallback:true},
       postcondition:{...postcondition},
+      ...(surfacePrecondition ? {surfacePrecondition:{...surfacePrecondition}} : {}),
       providerRequest:{
         capabilities:Array.isArray(providerRequest.capabilities)
           ? [...providerRequest.capabilities]
@@ -87,8 +99,9 @@ function validateOpenVisualFallbackContract(intent, contract) {
 }
 
 function resolveOpenVisualFallbackExecutionContext(
-  {intent, contract} = {},
+  {intent, contract, runtimeContext = {}} = {},
   {
+    verifySurfacePrecondition = evaluateSemanticSurfacePrecondition,
     selectProvider = selectPerceptionProvider,
     providerOptions = {},
     acquireMappedFrame = acquireMappedPrimaryVisualFrame,
@@ -97,6 +110,21 @@ function resolveOpenVisualFallbackExecutionContext(
 ) {
   const validated = validateOpenVisualFallbackContract(intent, contract);
   if (!validated.ok) return validated;
+
+  let surfaceMetadata = null;
+  if (validated.value.surfacePrecondition) {
+    const surface = verifySurfacePrecondition(
+      validated.value.surfacePrecondition,
+      runtimeContext
+    );
+    if (!surface?.ok) {
+      return failure(
+        surface?.reason || surface?.error || "SURFACE_PRECONDITION_FAILED",
+        surface?.detail || null
+      );
+    }
+    surfaceMetadata = surface.metadata || {kind:validated.value.surfacePrecondition.kind};
+  }
 
   const selected = selectProvider(validated.value.providerRequest, providerOptions);
   if (!selected?.ok || !selected.provider) {
@@ -126,6 +154,7 @@ function resolveOpenVisualFallbackExecutionContext(
       },
     },
     metadata:{
+      ...(surfaceMetadata ? {surfacePrecondition:{state:"VERIFIED", ...surfaceMetadata}} : {}),
       provider:{
         id:selected.descriptor?.id || provider.id,
         locality:selected.descriptor?.locality || provider.locality,
@@ -138,9 +167,9 @@ function resolveOpenVisualFallbackExecutionContext(
 
 function createLazyOpenVisualFallbackExecutionContext(intent, contract, dependencies = {}) {
   return {
-    resolveVisualFallbackContext:() =>
+    resolveVisualFallbackContext:(runtimeContext = {}) =>
       resolveOpenVisualFallbackExecutionContext(
-        {intent, contract},
+        {intent, contract, runtimeContext},
         dependencies
       ),
   };
