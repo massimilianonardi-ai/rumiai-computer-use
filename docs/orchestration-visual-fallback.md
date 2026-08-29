@@ -1,8 +1,8 @@
 # Visual fallback orchestration
 
-Status: **P5 COMPLETE for the initial narrow scope; P6A PHYSICALLY_VALIDATED; P6B ACTIVE**.
+Status: **P5 COMPLETE for the initial narrow scope; P6A PHYSICALLY_VALIDATED; P6B PHYSICALLY_OBSERVED; P6C ACTIVE**.
 
-Validated states:
+Validated/observed states:
 
 - P1–P4: `PHYSICALLY_VALIDATED`
 - P5A: `PHYSICALLY_VALIDATED`
@@ -11,6 +11,7 @@ Validated states:
 - P5D: `PHYSICALLY_VALIDATED`
 - P5E: `PHYSICALLY_VALIDATED`
 - P6A: `PHYSICALLY_VALIDATED`
+- P6B: `PHYSICALLY_OBSERVED`
 
 Detailed perception/action contracts are in `docs/perception.md`; operational resume state is in `docs/handoff.md`.
 
@@ -79,40 +80,58 @@ Authoritative validation:
 - tested PoC: `380c6f756dda2a2e798a7987e1d3aff2059060de`
 - result: 9 PASS / 0 FAIL / 0 BLOCKED
 
-The physical run proved exact local JSON registry lookup, semantic planner output, semantic `NO_SEMANTIC_TARGET` before lazy provider selection, product macOS Vision selection, real `CLICK_POSTED` delivery and independent `VERIFIED_SUCCESS`.
-
 See `docs/evidence/perception-p6a-caller-contract-registry-public-physical.md`.
 
-## P6B — real-application contract discovery
+## P6B — real-application discovery
+
+Status: `PHYSICALLY_OBSERVED`.
+
+Safari was used as the first real supported application surface. A loopback-only test-owned page rendered a deterministic target exclusively into an HTML canvas and replaced it with a deterministic postcondition only after a pointer click.
+
+Authoritative session:
+
+- session: `cu-perception-p6b-safari-canvas-discovery-public-s06`
+- evidence: `e8a2899c58c5e6d3725d4457af18aefc25923580`
+- Computer Use expected/observed: `3a3148cdf89735d2d46d208bbe69dc1d26722e3b`
+- Computer Control expected/observed: `e3a3f13d66546cf8f0fca50075bd4607c2c3d003`
+- frozen test source: `6d826092b93973905fa6f2c7f8ac1c1d68a92a31`
+- tested PoC: `0ae7c087bf0072aac0c5f0d180b8d83933022a3c`
+- result: 10 PASS / 0 FAIL / 0 BLOCKED
+
+Physical evidence proved:
+
+1. Safari actually requested and rendered the loopback page before perception (`requests=1`);
+2. a fresh semantic snapshot yielded structured `NO_SEMANTIC_TARGET` for the canvas text;
+3. the product-owned local macOS Vision provider resolved exactly one target using the existing exact-text-single-match policy;
+4. the deterministic postcondition was absent before delivery;
+5. real Computer Control returned `CLICK_POSTED` with no claimed semantic consequence;
+6. only a fresh independent post-action visual observation produced `VERIFIED_SUCCESS`;
+7. screenshots, OCR payloads and coordinates were not logged;
+8. pointer, Safari, loopback server, runtime/cache and temporary resources were cleaned up and product trees remained clean.
+
+Historical s01–s05 failures remain immutable. They progressively isolated PoC oracle and local-page bootstrap defects; no P1–P6A product contract was weakened to obtain the PASS.
+
+See `docs/evidence/perception-p6b-safari-canvas-discovery-public-physical.md`.
+
+P6B is observation, not product authorization. It does **not** enable generic Safari visual fallback and does not ship a built-in Safari contract.
+
+## P6C — bounded evidence-backed caller integration
 
 Status: `ACTIVE`.
 
-A built-in application contract must not be invented from UI intuition. Before adding one to product knowledge, discover and physically prove the application surface.
+The next checkpoint may add product caller knowledge only where the scope is explicitly bounded to an evidence-backed application/task contract. P6C must not infer generic Safari/web behavior from P6B.
 
-First candidate: **Safari**, already represented by the product application Provider. The discovery surface is a local test-owned page rendered by real Safari with an HTML canvas that draws one exact target and replaces it with one exact postcondition after a pointer click.
+Requirements:
 
-Why Safari/canvas:
-
-- Safari is a real supported application rather than another custom desktop fixture;
-- canvas is a natural semantic-observability gap: visible pixels may not expose the drawn text as an AX target;
-- local content removes network variability;
-- target and postcondition can be deterministic without hard-coded coordinates;
-- the existing P1–P5 mechanics can be reused without changing product runtime.
-
-P6B discovery must prove:
-
-1. no interference with an existing Safari user session: if Safari is already running, block before launch;
-2. real Safari launch/activation and current Computer Control observation;
-3. exact canvas target is absent from semantic resolution (`NO_SEMANTIC_TARGET`);
-4. product local macOS Vision provider is available/selected through P5D;
-5. mapped capture + P2B/P3A resolve exactly one visual target;
-6. P3B explicitly authorizes only the validated primary-display left click;
-7. Computer Control returns canonical `CLICK_POSTED` with no claimed semantic consequence;
-8. fresh independent post-action capture observes exactly the deterministic postcondition and no longer the original target;
-9. no screenshot bytes, OCR payload or coordinates are persisted/logged;
-10. pointer, Safari, local page and runtime are cleaned up and product trees remain clean.
-
-P6B is discovery only. A PASS does not authorize generic Safari visual fallback and does not by itself create a shipped registry entry. Promotion to built-in product knowledge requires a subsequent bounded contract whose scope corresponds to demonstrated application/task semantics.
+- caller/registry knowledge remains outside the planner;
+- selection remains exact and fail-closed;
+- no coordinates or provider objects in the stored contract;
+- the semantic path still runs first;
+- perception-provider selection remains lazy and Computer Use-owned;
+- only P5B-eligible semantic gaps may reach P5A;
+- `CLICK_POSTED` remains delivery only;
+- success still requires independent post-action evidence;
+- the built-in contract scope must be no broader than the semantics physically demonstrated in P6B.
 
 ## Deferred hardening
 
@@ -126,4 +145,4 @@ Still separate evidence programs:
 - richer pointer/keyboard gestures;
 - richer postconditions/recovery.
 
-Immediate next checkpoint: **P6B Safari real-application visual contract discovery**.
+Immediate next checkpoint: **P6C bounded evidence-backed caller-contract integration**.
