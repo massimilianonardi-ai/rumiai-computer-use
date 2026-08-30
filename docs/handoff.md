@@ -18,35 +18,126 @@ Repository state plus immutable evidence commits are authoritative when chat his
 - P7C: `REAL_USE_CANDIDATE_PHYSICALLY_VALIDATED`
 - P7D: `CONTRACT_VALIDATED`
 - P7E: `PHYSICALLY_VALIDATED`
-- P7 first real-use promotion: `COMPLETE` at the explicit `runTask` caller-context boundary
-- active program: **P8 trusted caller-context provenance**
+- P7 first real-use promotion: `COMPLETE` at explicit `runTask` caller-context boundary
+- P8A: `PROVENANCE_GAP_CONFIRMED`
+- P8B: `CONTRACT_VALIDATED`
+- P8C: `CONTRACT_VALIDATED`
+- P8D: `PHYSICALLY_VALIDATED`
+- active checkpoint: **P8E real resource-owning product caller**
 
 ## Latest authoritative physical validation
 
-P7E is the current top checkpoint.
+P8D is the current top checkpoint.
 
-- Computer Use validated runtime: `158cc475c209ade1c3260f0f2d6d4d4bc97f2f4a`
+- Computer Use validated runtime: `9088b0c2371852265b6334197f97ac13fd574070`
 - Computer Control dependency: `e3a3f13d66546cf8f0fca50075bd4607c2c3d003`
-- session: `cu-perception-p7e-agent-loop-caller-context-physical-public-s01`
-- evidence: `6af4a606eb71418cde61eddd3cdd1fade9b083d2`
-- frozen physical test source: `540abac1a7f534f36a809b0f8bb1036ceb57eb3f`
-- tested PoC: `5d10f4af586e1ec9e02e78ab90a8ae19eaa12823`
-- result: **14 PASS / 0 FAIL / 0 BLOCKED**
+- session: `cu-perception-p8d-task-resource-context-physical-public-s01`
+- evidence: `56439d05268b67427b901d686bac94ede4c12eb9`
+- frozen physical source: `66542db8413ea28e42a36332f680b1fc83348271`
+- tested PoC: `c562f7662dbfad9bbf96e1b146f462b605625b19`
+- result: **17 PASS / 0 FAIL / 0 BLOCKED**
 
-See `docs/evidence/perception-p7e-pulsar-caller-context-public-physical.md`.
+See `docs/evidence/perception-p8d-task-resource-context-public-physical.md`.
 
-P7E contract-only prerequisite:
+P8D validated that `runTask` can receive only a provenance-bearing `taskResourceContext`, derive the already-bounded `pulsar-document` caller context, retain semantic-first execution and complete the real Pulsar `UTF-8` fallback with independent success evidence.
 
-- session: `cu-perception-p7e-agent-loop-caller-context-public-s01`
-- evidence: `e1bb360188c3713653b09b0c2320fe45d4261f2d`
-- result: 13 PASS / 0 FAIL / 0 BLOCKED
+## P8 authoritative lineage
 
-P7D caller-contract prerequisite:
+### P8A — provenance gap
 
-- session: `cu-perception-p7d-pulsar-utf8-caller-contract-public-s01`
-- evidence: `31f10c01244d98eee1c8f309e46b0578d2d60337`
-- Computer Use product: `d1ca1c61affbe3aef5c477a4e0093f442765330a`
-- result: 12 PASS / 0 FAIL / 0 BLOCKED
+State: `PROVENANCE_GAP_CONFIRMED`.
+
+- session: `cu-perception-p8a-caller-context-provenance-gap-public-s01`
+- evidence: `fde64d9aab6cc14f8583864222b7581f177b86f7`
+- result: 14 PASS / 0 FAIL / 0 BLOCKED
+
+Conclusion: existing Pulsar skills/session/default CLI did not legitimately own a current-document path. No UI/planner inference is authorized to fill the gap.
+
+### P8B — task resource provenance boundary
+
+State: `CONTRACT_VALIDATED`.
+
+Product: `app/task-resource-context.js`.
+
+- session: `cu-perception-p8b-task-resource-context-public-s01`
+- evidence: `d08f48dee5fd7c14e3000821bb516dcafeca9da7`
+- product: `e55e038bdb5ffd5fc5c846cd74d8f69d872a73b3`
+- result: 15 PASS / 0 FAIL / 0 BLOCKED
+
+Bounded initial resource shape:
+
+```text
+version = 1
+resources[]:
+  kind = file
+  role = current-document
+  application = Pulsar
+  path = absolute caller-owned path
+```
+
+The boundary performs no filesystem discovery and no UI/perception inference. Relative paths, unsupported versions/resources, oversized contexts and ambiguous current-document ownership fail closed.
+
+### P8C — normal `runTask` resource wiring
+
+State: `CONTRACT_VALIDATED`.
+
+- session: `cu-perception-p8c-agent-loop-task-resource-context-public-s01`
+- evidence: `aabe4a69a4a4b4c0ef86ebb3cfd659300aa103d8`
+- Computer Use: `9088b0c2371852265b6334197f97ac13fd574070`
+- result: 16 PASS / 0 FAIL / 0 BLOCKED
+
+`runTask` visual-knowledge sources are explicit and mutually exclusive:
+
+```text
+visualFallbackContracts
+XOR visualFallbackCallerContext
+XOR taskResourceContext
+```
+
+Zero sources is valid and means no visual knowledge. `agent-loop.js` still does not contain `documentPath`; the default interactive CLI still calls `runTask(task)` without task resources.
+
+### P8D — physical task resource path
+
+State: `PHYSICALLY_VALIDATED`.
+
+The physical session supplied only one explicit temporary Pulsar `current-document` file resource through `taskResourceContext`. It supplied neither `visualFallbackContracts` nor `visualFallbackCallerContext`.
+
+Validated chain:
+
+```text
+caller-owned file resource
+→ taskResourceContext
+→ derived pulsar-document caller context
+→ bounded P7D contract
+→ semantic OPEN UTF-8
+→ structured NO_SEMANTIC_TARGET
+→ exact window-title surface guard
+→ lazy local Vision
+→ exact UTF-8 target
+→ Computer Control CLICK_POSTED
+→ independent exact UTF-16 LE observation
+→ VERIFIED_SUCCESS
+```
+
+Physical markers:
+
+- `source=task-resource-context`: PASS
+- derived caller context `pulsar-document`: PASS
+- explicit caller context absent: PASS
+- explicit contracts absent: PASS
+- semantic-only planner: PASS
+- semantic `NO_SEMANTIC_TARGET`: PASS
+- exact current-document surface guard: PASS
+- provider selection after gap/guard: one call
+- `CLICK_POSTED`: PASS, delivery only
+- independent exact `UTF-16 LE`: PASS
+- `VERIFIED_SUCCESS`: PASS
+- temporary document hash unchanged: PASS
+- no encoding selection confirmed: PASS
+- no screenshot/OCR/coordinates persisted: PASS
+- no test-initiated external network: PASS
+- selector/pointer/Pulsar/runtime/temp cleanup: PASS
+- product trees clean: PASS
 
 ## Non-negotiable invariants
 
@@ -54,11 +145,11 @@ P7D caller-contract prerequisite:
 2. Visual fallback is explicit and is never a generic retry mechanism.
 3. `delivery != success`; `CLICK_POSTED` is delivery evidence only.
 4. `IMPLEMENTED != PHYSICALLY_VALIDATED`.
-5. Planner output remains semantic: no coordinates, provider identity, caller context, document path, scope identity, surface identity or fabricated postconditions.
+5. Planner output remains semantic: no coordinates, provider identity, caller context, resource identity/path, scope identity, surface identity or fabricated postconditions.
 6. Only structured P5B-eligible semantic observability/resolution gaps may consider visual fallback.
 7. Perception-provider selection belongs to Computer Use, never Computer Control.
 8. Runtime surface preconditions are checked before provider selection/action delivery.
-9. Caller-owned surface context must not be guessed from UI state.
+9. Caller/resource-owned identity must not be guessed from UI state.
 10. No mandatory network/account/cloud API dependency.
 11. Screenshot bytes, OCR text and coordinates remain ephemeral/out of ordinary logs.
 12. Physical evidence is immutable and Git is forward-only.
@@ -68,10 +159,12 @@ P7D caller-contract prerequisite:
 The most advanced validated path is now:
 
 ```text
-trusted caller-owned context
+trusted caller-owned file resource
+→ versioned taskResourceContext
 → normal runTask
 → semantic planner output
-→ bounded caller-context normalization
+→ bounded resource normalization
+→ bounded caller-context derivation
 → bounded P7D contract materialization
 → semantic OPEN first
 → structured P5B-eligible gap
@@ -96,162 +189,44 @@ P6 remains complete and must not be reopened merely because P7/P8 evolve.
 - P6C scoped integration evidence: `c66eb5ba69d9e0435cb894731b1d1cea832c31e1`
 - P6D surface-precondition evidence: `ec7e9757dada06ca313e585c09a42fcf7202e90d`
 
-P6 proves the generic safety mechanism only. Controlled Safari evidence does not authorize generic Safari/web fallback.
+Controlled Safari evidence does not authorize generic Safari/web fallback.
 
-See:
+## P7 closed real-use promotion
 
-- `docs/evidence/perception-p6a-caller-contract-registry-public-physical.md`
-- `docs/evidence/perception-p6b-safari-canvas-discovery-public-physical.md`
-- `docs/evidence/perception-p6c-scoped-caller-integration-public-physical.md`
-- `docs/evidence/perception-p6d-surface-precondition-public-physical.md`
+P7 remains complete at the explicit caller-context API boundary.
 
-## P7 — first real-use promotion
+- P7A evidence: `65c7a674984638529ee8be603a6df09445f68deb`
+- P7B evidence: `5f5045693400f8957e98baea6ba76fc428011e7f`
+- P7C physical evidence: `77fd94bd6b765a56182822cf2a43297b6baa1537`
+- P7D contract evidence: `31f10c01244d98eee1c8f309e46b0578d2d60337`
+- P7E contract evidence: `e1bb360188c3713653b09b0c2320fe45d4261f2d`
+- P7E physical evidence: `6af4a606eb71418cde61eddd3cdd1fade9b083d2`
 
-Status: `COMPLETE` at the explicit `runTask` API boundary.
+Do not generalize P7/P8 into generic Pulsar status-bar clicking, arbitrary targets, automatic path inference, prefix/contains/fuzzy surface matching or generic browser/application behavior.
 
-### P7A — gap discovery
+## Active checkpoint: P8E real resource-owning product caller
 
-Evidence: `65c7a674984638529ee8be603a6df09445f68deb`.
+P8D proves the resource transport/execution path, but the physical fixture itself owned the temporary file resource. P8E must move resource ownership into a normal product invocation/workflow boundary.
 
-Real Pulsar discovery found:
+Required discovery/design question:
 
-- `JavaScript`: semantic `NO_SEMANTIC_TARGET`, Vision exact
-- `UTF-8`: semantic `NO_SEMANTIC_TARGET`, Vision exact
-- `LF`: not Vision exact
-- `Spaces: 2`: not Vision exact
+> Which smallest normal Computer Use caller already receives or deterministically creates a file path **before** `runTask` and can therefore construct `taskResourceContext` as an ownership fact rather than an inference?
 
-The filename was not a usable `semantic-text` surface identity, so nothing was promoted at P7A.
+If no such caller exists, add the smallest explicit resource-owning invocation boundary rather than reading the GUI.
 
-### P7B — surface identity discovery
+P8E constraints:
 
-Evidence: `5f5045693400f8957e98baea6ba76fc428011e7f`.
-
-Two distinct temporary Pulsar documents proved a caller-derivable exact current-window title. `window-title/exact` verified the current document and rejected the other document with zero matches.
-
-### P7C — real-use end-to-end candidate
-
-Chosen target: `UTF-8`.
-
-Known independent postcondition: exact `UTF-16 LE`, based on Pulsar's encoding-selector source and fixed before delivery.
-
-Lineage:
-
-- s01 evidence `6d73c69ecac5e44d84bb12975c6020fa7fde0304`: immutable fixture FAIL before any click; transient Pulsar title accepted too early.
-- s02 evidence `77fd94bd6b765a56182822cf2a43297b6baa1537`: authoritative physical PASS.
-
-P7C s02 proved:
-
-```text
-semantic OPEN UTF-8
-→ NO_SEMANTIC_TARGET
-→ exact current-document guard
-→ local Vision
-→ exact UTF-8
-→ CLICK_POSTED
-→ independent exact UTF-16 LE
-→ VERIFIED_SUCCESS
-```
-
-The P7C contract was injected by the fixture, so P7C was candidate validation, not final shipped caller integration.
-
-See `docs/evidence/perception-p7c-pulsar-utf8-real-use-public-physical.md`.
-
-### P7D — bounded product knowledge
-
-Product: `app/pulsar-encoding-selector-visual-contract.js`.
-
-The materializer accepts caller-owned `documentPath` and produces only the exact Pulsar `OPEN UTF-8` contract with current-document `window-title/exact`, local text-region requirement and exact `UTF-16 LE` postcondition.
-
-It contains no coordinates, provider object or Computer Control logic.
-
-Evidence: `31f10c01244d98eee1c8f309e46b0578d2d60337`.
-
-State: `CONTRACT_VALIDATED`.
-
-### P7E — explicit caller-context integration
-
-Product:
-
-- `app/visual-fallback-caller-context.js`
-- `app/agent-loop.js`
-
-Supported caller-context kind:
-
-```text
-pulsar-document
-```
-
-A trusted caller may provide an absolute `documentPath`. `agent-loop.js` itself does not infer that path from a window, snapshot, OCR or Vision.
-
-Contract source rules:
-
-- no caller context + no explicit contracts → no visual-fallback knowledge;
-- explicit contracts only → existing compatibility path;
-- caller context only → bounded resolver path;
-- explicit contracts + caller context simultaneously → fail closed as ambiguous;
-- invalid/unsupported caller context → fail closed.
-
-P7E physical evidence `6af4a606eb71418cde61eddd3cdd1fade9b083d2` proved the real Pulsar task through normal `runTask` with **caller context only**, no injected `visualFallbackContracts`.
-
-Physical markers:
-
-- explicit caller document path: PASS
-- P7D materialization from caller context: PASS
-- planner semantic-only: PASS
-- semantic `NO_SEMANTIC_TARGET`: PASS
-- exact `window-title` surface guard: PASS
-- local Vision selection after gap/guard: one call
-- `CLICK_POSTED`: PASS, delivery only
-- independent exact `UTF-16 LE`: PASS
-- `VERIFIED_SUCCESS`: PASS
-- document hash unchanged: PASS
-- no encoding selection confirmed: PASS
-- no screenshot/OCR/coordinates persisted: PASS
-- no test-initiated external network: PASS
-- selector/pointer/Pulsar/runtime/temp cleanup: PASS
-- product trees clean: PASS
-
-See `docs/evidence/perception-p7e-pulsar-caller-context-public-physical.md`.
-
-### P7 completion boundary
-
-P7 has shipped and physically validated one narrow real-use fallback at the API boundary:
-
-```text
-caller already owns current Pulsar documentPath
-→ runTask receives pulsar-document caller context
-→ exact bounded visual fallback may be materialized
-```
-
-Do **not** claim that the default interactive CLI can already discover/provide this context. `main()` still invokes `runTask(task)` without trusted document provenance.
-
-Do **not** generalize P7 into:
-
-- generic Pulsar status-bar clicking;
-- arbitrary Pulsar OPEN targets;
-- automatic document-path inference from UI state;
-- generic application caller-context synthesis;
-- prefix/contains/fuzzy surface matching.
-
-## Active program: P8 trusted caller-context provenance
-
-P8 must connect a real deterministic product workflow that legitimately owns a document path to the P7E caller-context API.
-
-The problem is provenance, not visual perception.
-
-Required properties:
-
-1. Identify the smallest existing workflow/competence that already knows the Pulsar document path through its own deterministic state.
-2. Define an explicit provenance-bearing caller-context envelope.
-3. Keep `documentPath` out of planner output.
-4. Never derive `documentPath` from window title, semantic snapshot, OCR, Vision or coordinates.
-5. Bind the context to the owning task/run and fail closed when absent, stale or incompatible.
-6. Do not add Computer Control mechanics merely to transport context.
-7. Reuse P7D/P7E exact contract and runtime surface guard unchanged where possible.
-8. Contract-test provenance and fail-closed behavior before physical testing.
-9. Physically validate the provenance-bearing path before claiming support in the default/interactive product flow.
-
-Immediate next checkpoint: **P8A caller-context provenance discovery and contract design**.
+1. Resource ownership must originate before the planner.
+2. No window-title/snapshot/OCR/Vision/coordinate derivation of resource identity.
+3. No free-form planner-produced resource paths.
+4. No default implicit CLI resource context.
+5. Missing, stale, ambiguous or incompatible ownership must fail closed.
+6. Preserve `taskResourceContext` versioning and bounded cardinality.
+7. Preserve P7D/P7E/P8B/P8C behavior unchanged.
+8. Preserve lazy provider selection after semantic gap and surface guard.
+9. Preserve `CLICK_POSTED != success`.
+10. Contract-test the owner/provenance boundary before physical validation.
+11. Physically validate the same real Pulsar use case through the real owner before claiming default product support.
 
 ## Reference paths
 
@@ -276,4 +251,4 @@ For every fresh manual terminal session, the first command must be `cd` into the
 7. Inspect remote evidence, not only terminal summary.
 8. Promote only the claims evidenced.
 
-Immediate next checkpoint: **P8A caller-context provenance discovery and contract design**.
+Immediate next checkpoint: **P8E real resource-owning product caller discovery/design**.
