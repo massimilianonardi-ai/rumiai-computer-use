@@ -1,6 +1,6 @@
 # Visual fallback orchestration
 
-Status: **P5 COMPLETE for the initial narrow scope; P6A PHYSICALLY_VALIDATED; P6B PHYSICALLY_OBSERVED; P6C PHYSICALLY_VALIDATED; P6D ACTIVE**.
+Status: **P5 COMPLETE for the initial narrow scope; P6A PHYSICALLY_VALIDATED; P6B PHYSICALLY_OBSERVED; P6C PHYSICALLY_VALIDATED; P6D PHYSICALLY_VALIDATED; initial P6 safety architecture COMPLETE; P7 ACTIVE**.
 
 Validated/observed states:
 
@@ -13,6 +13,7 @@ Validated/observed states:
 - P6A: `PHYSICALLY_VALIDATED`
 - P6B: `PHYSICALLY_OBSERVED`
 - P6C: `PHYSICALLY_VALIDATED`
+- P6D: `PHYSICALLY_VALIDATED`
 
 Detailed perception/action contracts are in `docs/perception.md`; operational resume state is in `docs/handoff.md`.
 
@@ -139,23 +140,74 @@ The P6C `PROCEED → FINISHED` contract remains test-owned. It is not shipped as
 
 ## P6D — runtime surface precondition
 
+Status: `PHYSICALLY_VALIDATED`.
+
+P6D closes the gap left by P6C: caller scope identifies who owns a contract, while the runtime surface precondition proves that the currently active application surface is the one the bounded contract was designed for.
+
+The validated boundary is:
+
+```text
+semantic OPEN first
+→ P5B-eligible structured gap
+→ deterministic caller-owned runtime surface precondition
+→ fail closed on missing/ambiguous/mismatched surface
+→ only then lazy Computer Use-owned perception-provider selection
+→ bounded visual fallback
+→ CLICK_POSTED delivery
+→ independent post-action evidence
+→ VERIFIED_SUCCESS
+```
+
+The P6D product supports declarative surface preconditions outside planner output. The authoritative Safari proof uses the existing `semantic-text` + `exact` precondition against the document title that Safari exposes deterministically in its semantic snapshot.
+
+Authoritative validation:
+
+- session: `cu-perception-p6d-semantic-title-surface-precondition-public-s10`
+- evidence: `ec7e9757dada06ca313e585c09a42fcf7202e90d`
+- Computer Use runtime: `a90ab782d85e1283e76b4b64aa9bdbe54a7e4e0e`
+- Computer Control: `e3a3f13d66546cf8f0fca50075bd4607c2c3d003`
+- frozen physical test source: `d5b6d9561b98409d52a84f4c1a45aa59de489357`
+- tested PoC: `8eeaa3654b65cf15bf079240badb8aa3ccd47532`
+- result: 12 PASS / 0 FAIL / 0 BLOCKED
+
+The negative BETA surface produced one exact BETA semantic match while the ALPHA contract precondition failed with `SURFACE_PRECONDITION_NOT_MET`; provider selection stayed at zero and no click was delivered. The same Safari tab then reloaded the same controlled document as ALPHA; a fresh semantic snapshot produced exactly one ALPHA match, the precondition verified, local Vision was selected exactly once, Computer Control returned `CLICK_POSTED`, and only fresh independent post-action perception produced `VERIFIED_SUCCESS`.
+
+The s01–s07 failures and s08–s09 diagnostics remain immutable. They established that arbitrary DOM heading identity and Safari's browser-owned current-window-title suffix were not appropriate representations for this proof; no prefix/contains/fuzzy matching was introduced.
+
+See `docs/evidence/perception-p6d-surface-precondition-public-physical.md`.
+
+The P6D BETA/ALPHA titles, `PROCEED → FINISHED`, scope and controlled page remain test-owned and are not shipped as generic Safari knowledge.
+
+## P6 completion boundary
+
+The initial P6 visual-fallback safety architecture is `COMPLETE`:
+
+1. P6A — deterministic caller-owned contract registry;
+2. P6B — real-application visual-gap discovery;
+3. P6C — explicit caller scope and plan-aware bounded selection;
+4. P6D — runtime surface precondition before provider selection/action delivery.
+
+This completion does not mean arbitrary applications or surfaces are authorized. It means the mechanism required to promote future real-use-case knowledge safely is physically validated.
+
+## P7 — evidence-backed real-use-case discovery
+
 Status: `ACTIVE`.
 
-P6C proves which caller scope owns a contract, but `scopeId` alone is not evidence that the currently active application surface is the one that contract was designed for. Before shipping reusable real-application knowledge, the runtime must fail closed unless a deterministic surface precondition is satisfied.
+P7 must discover and validate a genuinely useful deterministic real application use case before any built-in caller contract/skill knowledge is promoted.
 
-P6D must establish a contract boundary in which:
+Selection constraints:
 
-- surface identity/precondition remains outside planner output;
-- a contract cannot run merely because application, scope and target text happen to match;
-- the surface precondition is checked before provider selection/action delivery;
-- failure or ambiguity prevents visual fallback with no click;
-- semantic-first and P5B eligibility remain unchanged;
-- provider selection remains lazy and Computer Use-owned;
-- `CLICK_POSTED` remains delivery only;
-- post-action success still requires independent evidence;
-- no generic Safari/page inference is introduced.
+- choose a stable supported application/surface with a useful user outcome;
+- prefer a surface whose runtime identity can be observed deterministically;
+- keep caller scope and surface identity outside planner output;
+- keep planner intents semantic;
+- require semantic-first execution and a P5B-eligible gap before visual perception;
+- keep provider selection lazy and Computer Use-owned;
+- require exact target and independently verifiable postcondition for the first promoted case;
+- do not infer generic Safari/web behavior from the controlled P6 evidence;
+- physically observe the candidate before adding shipped registry/skill knowledge.
 
-The first P6D physical proof should reuse the controlled Safari surface and demonstrate both a positive surface match and a negative/mismatched-surface fail-closed case before any action.
+System Settings should not be the first P7 candidate because earlier physical work exposed AX fragility there. Safari is eligible only for a genuinely bounded real use case with real surface identity, not as generic browser fallback.
 
 ## Deferred hardening
 
@@ -169,4 +221,4 @@ Still separate evidence programs:
 - richer pointer/keyboard gestures;
 - richer postconditions/recovery.
 
-Immediate next checkpoint: **P6D runtime surface precondition**.
+Immediate next checkpoint: **P7 evidence-backed real-use-case discovery**.
