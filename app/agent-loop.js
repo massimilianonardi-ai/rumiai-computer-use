@@ -37,6 +37,9 @@ const {
   resolveVisualFallbackContractsFromCallerContext,
 } = require("./visual-fallback-caller-context");
 const {
+  derivePulsarVisualFallbackCallerContextFromTaskResources,
+} = require("./task-resource-context");
+const {
   strongBlockerEvidence,
   locateOrdinalResult,
   decideRecovery,
@@ -70,8 +73,14 @@ function visualFallbackContractForIntent(intent, contracts) {
 function resolveEffectiveVisualFallbackContracts(plan, state = {}, options = {}) {
   const hasExplicitContracts = options.visualFallbackContracts != null;
   const hasCallerContext = options.visualFallbackCallerContext != null;
+  const hasTaskResourceContext = options.taskResourceContext != null;
+  const sourceCount = [
+    hasExplicitContracts,
+    hasCallerContext,
+    hasTaskResourceContext,
+  ].filter(Boolean).length;
 
-  if (hasExplicitContracts && hasCallerContext) {
+  if (sourceCount > 1) {
     return {
       ok:false,
       state:"VISUAL_FALLBACK_CONTRACT_SOURCE_AMBIGUOUS",
@@ -96,6 +105,42 @@ function resolveEffectiveVisualFallbackContracts(plan, state = {}, options = {})
         : "NO_VISUAL_FALLBACK_CONTRACT",
       contracts:options.visualFallbackContracts,
       source:"explicit-contracts",
+    };
+  }
+
+  if (hasTaskResourceContext) {
+    const derived = derivePulsarVisualFallbackCallerContextFromTaskResources(
+      options.taskResourceContext
+    );
+    if (!derived.ok) return derived;
+
+    if (!derived.callerContext) {
+      return {
+        ok:true,
+        state:derived.state,
+        contracts:[],
+        source:"task-resource-context",
+        callerContext:null,
+        resource:derived.resource || null,
+        descriptors:[],
+      };
+    }
+
+    const resolved = resolveVisualFallbackContractsFromCallerContext(
+      plan,
+      derived.callerContext,
+      {initialApplication:state.currentApp}
+    );
+    if (!resolved.ok) return resolved;
+
+    return {
+      ok:true,
+      state:resolved.state,
+      contracts:Array.isArray(resolved.contracts) ? resolved.contracts : [],
+      source:"task-resource-context",
+      callerContext:resolved.callerContext || derived.callerContext,
+      resource:derived.resource || null,
+      descriptors:Array.isArray(resolved.descriptors) ? resolved.descriptors : [],
     };
   }
 
@@ -367,6 +412,14 @@ async function runTask(task, options = {}) {
     console.log(
       `[visual-fallback-caller] source=caller-context` +
       ` | kind=${visualFallbackSelection.callerContext?.kind || "unknown"}` +
+      ` | contracts=${visualFallbackContracts.length}`
+    );
+  } else if (visualFallbackSelection.source === "task-resource-context") {
+    const resource = visualFallbackSelection.resource;
+    console.log(
+      `[visual-fallback-caller] source=task-resource-context` +
+      ` | kind=${visualFallbackSelection.callerContext?.kind || "none"}` +
+      ` | resource=${resource ? `${resource.kind}:${resource.role}:${resource.application}` : "none"}` +
       ` | contracts=${visualFallbackContracts.length}`
     );
   }
