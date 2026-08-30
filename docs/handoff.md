@@ -6,20 +6,47 @@ Repository state plus immutable evidence commits are authoritative when chat his
 
 ## Current authoritative state
 
-P5 is **complete for the initial narrow scope**. P6A is **PHYSICALLY_VALIDATED**. P6B is **PHYSICALLY_OBSERVED**. P6C is **PHYSICALLY_VALIDATED**. P6D is **PHYSICALLY_VALIDATED**. The initial P6 visual-fallback safety architecture is **COMPLETE**. P7 is the active program.
+- P1–P4: `PHYSICALLY_VALIDATED`
+- P5: initial narrow semantic-first visual fallback `COMPLETE`
+- P6A: `PHYSICALLY_VALIDATED`
+- P6B: `PHYSICALLY_OBSERVED`
+- P6C: `PHYSICALLY_VALIDATED`
+- P6D: `PHYSICALLY_VALIDATED`
+- initial P6 visual-fallback safety architecture: `COMPLETE`
+- P7A: `DIAGNOSTIC_OBSERVED`
+- P7B: `DIAGNOSTIC_OBSERVED`
+- P7C: `REAL_USE_CANDIDATE_PHYSICALLY_VALIDATED`
+- P7D: `CONTRACT_VALIDATED`
+- P7E: `PHYSICALLY_VALIDATED`
+- P7 first real-use promotion: `COMPLETE` at the explicit `runTask` caller-context boundary
+- active program: **P8 trusted caller-context provenance**
 
-Authoritative P6D validation:
+## Latest authoritative physical validation
 
-- Computer Use runtime: `a90ab782d85e1283e76b4b64aa9bdbe54a7e4e0e`
+P7E is the current top checkpoint.
+
+- Computer Use validated runtime: `158cc475c209ade1c3260f0f2d6d4d4bc97f2f4a`
 - Computer Control dependency: `e3a3f13d66546cf8f0fca50075bd4607c2c3d003`
-- session: `cu-perception-p6d-semantic-title-surface-precondition-public-s10`
-- evidence: `ec7e9757dada06ca313e585c09a42fcf7202e90d`
-- frozen physical test source: `d5b6d9561b98409d52a84f4c1a45aa59de489357`
-- tested PoC SHA: `8eeaa3654b65cf15bf079240badb8aa3ccd47532`
-- result: 12 PASS / 0 FAIL / 0 BLOCKED
-- active program: **P7 evidence-backed real-use-case discovery**
+- session: `cu-perception-p7e-agent-loop-caller-context-physical-public-s01`
+- evidence: `6af4a606eb71418cde61eddd3cdd1fade9b083d2`
+- frozen physical test source: `540abac1a7f534f36a809b0f8bb1036ceb57eb3f`
+- tested PoC: `5d10f4af586e1ec9e02e78ab90a8ae19eaa12823`
+- result: **14 PASS / 0 FAIL / 0 BLOCKED**
 
-See `docs/evidence/perception-p6d-surface-precondition-public-physical.md`.
+See `docs/evidence/perception-p7e-pulsar-caller-context-public-physical.md`.
+
+P7E contract-only prerequisite:
+
+- session: `cu-perception-p7e-agent-loop-caller-context-public-s01`
+- evidence: `e1bb360188c3713653b09b0c2320fe45d4261f2d`
+- result: 13 PASS / 0 FAIL / 0 BLOCKED
+
+P7D caller-contract prerequisite:
+
+- session: `cu-perception-p7d-pulsar-utf8-caller-contract-public-s01`
+- evidence: `31f10c01244d98eee1c8f309e46b0578d2d60337`
+- Computer Use product: `d1ca1c61affbe3aef5c477a4e0093f442765330a`
+- result: 12 PASS / 0 FAIL / 0 BLOCKED
 
 ## Non-negotiable invariants
 
@@ -27,32 +54,31 @@ See `docs/evidence/perception-p6d-surface-precondition-public-physical.md`.
 2. Visual fallback is explicit and is never a generic retry mechanism.
 3. `delivery != success`; `CLICK_POSTED` is delivery evidence only.
 4. `IMPLEMENTED != PHYSICALLY_VALIDATED`.
-5. Planner output remains semantic: no coordinates, provider identity, scope identity, surface identity or fabricated postconditions.
+5. Planner output remains semantic: no coordinates, provider identity, caller context, document path, scope identity, surface identity or fabricated postconditions.
 6. Only structured P5B-eligible semantic observability/resolution gaps may consider visual fallback.
 7. Perception-provider selection belongs to Computer Use, never Computer Control.
 8. Runtime surface preconditions are checked before provider selection/action delivery.
-9. No mandatory network/account/cloud API dependency.
-10. Screenshot bytes, OCR text and coordinates remain ephemeral/out of ordinary logs.
-11. Physical evidence is immutable and Git is forward-only.
+9. Caller-owned surface context must not be guessed from UI state.
+10. No mandatory network/account/cloud API dependency.
+11. Screenshot bytes, OCR text and coordinates remain ephemeral/out of ordinary logs.
+12. Physical evidence is immutable and Git is forward-only.
 
-## Validated orchestration
+## Current validated orchestration
 
-P1–P4 remain physically validated and must not be physically rerun merely for regression. P5A, P5C, P5D and P5E are physically validated; P5B is contract-validated. P6A, P6C and P6D are physically validated; P6B is physically observed.
-
-The bounded orchestration is now:
+The most advanced validated path is now:
 
 ```text
-semantic planner output
-→ normal agent loop
+trusted caller-owned context
+→ normal runTask
+→ semantic planner output
+→ bounded caller-context normalization
+→ bounded P7D contract materialization
 → semantic OPEN first
-→ structured eligible gap
-→ P5B
-→ caller-owned scoped visual contract
+→ structured P5B-eligible gap
 → deterministic runtime surface precondition
 → fail closed if missing / ambiguous / mismatched
-→ lazy Computer Use-owned perception-provider selection
-→ deterministic visual execution context
-→ P5A
+→ lazy Computer Use-owned local perception-provider selection
+→ exact visual target
 → Computer Control CLICK_POSTED
 → independent post-action perception
 → exact postcondition
@@ -61,128 +87,171 @@ semantic planner output
 
 `CLICK_POSTED` never implies success.
 
-## P6A — caller-contract registry
+## P6 closed safety architecture
 
-Status: `PHYSICALLY_VALIDATED`.
+P6 remains complete and must not be reopened merely because P7/P8 evolve.
 
-`app/visual-fallback-contract-manager.js` is a local deterministic registry for caller-owned execution knowledge, intentionally separate from competence skills and provider selection.
+- P6A registry evidence: `21ad01e93a5de4e5276b49c193269a26ad66b164`
+- P6B Safari observation evidence: `e8a2899c58c5e6d3725d4457af18aefc25923580`
+- P6C scoped integration evidence: `c66eb5ba69d9e0435cb894731b1d1cea832c31e1`
+- P6D surface-precondition evidence: `ec7e9757dada06ca313e585c09a42fcf7202e90d`
 
-Original bounded lookup:
+P6 proves the generic safety mechanism only. Controlled Safari evidence does not authorize generic Safari/web fallback.
+
+See:
+
+- `docs/evidence/perception-p6a-caller-contract-registry-public-physical.md`
+- `docs/evidence/perception-p6b-safari-canvas-discovery-public-physical.md`
+- `docs/evidence/perception-p6c-scoped-caller-integration-public-physical.md`
+- `docs/evidence/perception-p6d-surface-precondition-public-physical.md`
+
+## P7 — first real-use promotion
+
+Status: `COMPLETE` at the explicit `runTask` API boundary.
+
+### P7A — gap discovery
+
+Evidence: `65c7a674984638529ee8be603a6df09445f68deb`.
+
+Real Pulsar discovery found:
+
+- `JavaScript`: semantic `NO_SEMANTIC_TARGET`, Vision exact
+- `UTF-8`: semantic `NO_SEMANTIC_TARGET`, Vision exact
+- `LF`: not Vision exact
+- `Spaces: 2`: not Vision exact
+
+The filename was not a usable `semantic-text` surface identity, so nothing was promoted at P7A.
+
+### P7B — surface identity discovery
+
+Evidence: `5f5045693400f8957e98baea6ba76fc428011e7f`.
+
+Two distinct temporary Pulsar documents proved a caller-derivable exact current-window title. `window-title/exact` verified the current document and rejected the other document with zero matches.
+
+### P7C — real-use end-to-end candidate
+
+Chosen target: `UTF-8`.
+
+Known independent postcondition: exact `UTF-16 LE`, based on Pulsar's encoding-selector source and fixed before delivery.
+
+Lineage:
+
+- s01 evidence `6d73c69ecac5e44d84bb12975c6020fa7fde0304`: immutable fixture FAIL before any click; transient Pulsar title accepted too early.
+- s02 evidence `77fd94bd6b765a56182822cf2a43297b6baa1537`: authoritative physical PASS.
+
+P7C s02 proved:
 
 ```text
-application + intent=OPEN + exact target
+semantic OPEN UTF-8
+→ NO_SEMANTIC_TARGET
+→ exact current-document guard
+→ local Vision
+→ exact UTF-8
+→ CLICK_POSTED
+→ independent exact UTF-16 LE
+→ VERIFIED_SUCCESS
 ```
 
-Authoritative evidence: `21ad01e93a5de4e5276b49c193269a26ad66b164`.
+The P7C contract was injected by the fixture, so P7C was candidate validation, not final shipped caller integration.
 
-See `docs/evidence/perception-p6a-caller-contract-registry-public-physical.md`.
+See `docs/evidence/perception-p7c-pulsar-utf8-real-use-public-physical.md`.
 
-## P6B — real Safari canvas discovery
+### P7D — bounded product knowledge
 
-Status: `PHYSICALLY_OBSERVED`.
+Product: `app/pulsar-encoding-selector-visual-contract.js`.
 
-Authoritative evidence: `e8a2899c58c5e6d3725d4457af18aefc25923580`.
+The materializer accepts caller-owned `documentPath` and produces only the exact Pulsar `OPEN UTF-8` contract with current-document `window-title/exact`, local text-region requirement and exact `UTF-16 LE` postcondition.
 
-A real Safari instance loaded a loopback-only test page whose target existed only as canvas text. The session physically proved a semantic `NO_SEMANTIC_TARGET`, local macOS Vision exact target resolution, canonical `CLICK_POSTED`, and `VERIFIED_SUCCESS` only from fresh independent post-action observation.
+It contains no coordinates, provider object or Computer Control logic.
 
-P6B does **not** authorize generic Safari or arbitrary web visual fallback.
+Evidence: `31f10c01244d98eee1c8f309e46b0578d2d60337`.
 
-See `docs/evidence/perception-p6b-safari-canvas-discovery-public-physical.md`.
+State: `CONTRACT_VALIDATED`.
 
-## P6C — scoped caller integration
+### P7E — explicit caller-context integration
 
-Status: `PHYSICALLY_VALIDATED`.
+Product:
 
-P6C adds optional caller `scopeId` and a plan-aware selector. The bounded lookup is effectively:
+- `app/visual-fallback-caller-context.js`
+- `app/agent-loop.js`
+
+Supported caller-context kind:
 
 ```text
-scopeId + application + OPEN + exact target
+pulsar-document
 ```
 
-Scope remains outside planner output. Wrong scope fails closed. Provider selection does not happen during contract selection.
+A trusted caller may provide an absolute `documentPath`. `agent-loop.js` itself does not infer that path from a window, snapshot, OCR or Vision.
 
-Authoritative evidence:
+Contract source rules:
 
-- session: `cu-perception-p6c-scoped-caller-integration-public-s01`
-- evidence: `c66eb5ba69d9e0435cb894731b1d1cea832c31e1`
-- Computer Use: `a1bdddc813a89a16552b08ccec6b3aec00eb3157`
-- result: 11 PASS / 0 FAIL / 0 BLOCKED
+- no caller context + no explicit contracts → no visual-fallback knowledge;
+- explicit contracts only → existing compatibility path;
+- caller context only → bounded resolver path;
+- explicit contracts + caller context simultaneously → fail closed as ambiguous;
+- invalid/unsupported caller context → fail closed.
 
-See `docs/evidence/perception-p6c-scoped-caller-integration-public-physical.md`.
+P7E physical evidence `6af4a606eb71418cde61eddd3cdd1fade9b083d2` proved the real Pulsar task through normal `runTask` with **caller context only**, no injected `visualFallbackContracts`.
 
-## P6D — runtime surface precondition
+Physical markers:
 
-Status: `PHYSICALLY_VALIDATED`.
+- explicit caller document path: PASS
+- P7D materialization from caller context: PASS
+- planner semantic-only: PASS
+- semantic `NO_SEMANTIC_TARGET`: PASS
+- exact `window-title` surface guard: PASS
+- local Vision selection after gap/guard: one call
+- `CLICK_POSTED`: PASS, delivery only
+- independent exact `UTF-16 LE`: PASS
+- `VERIFIED_SUCCESS`: PASS
+- document hash unchanged: PASS
+- no encoding selection confirmed: PASS
+- no screenshot/OCR/coordinates persisted: PASS
+- no test-initiated external network: PASS
+- selector/pointer/Pulsar/runtime/temp cleanup: PASS
+- product trees clean: PASS
 
-P6D closes the safety gap left by caller scope: a contract cannot run merely because application, scope and target match. The currently active application surface must satisfy a deterministic runtime precondition after a P5B-eligible semantic gap and before perception-provider selection.
+See `docs/evidence/perception-p7e-pulsar-caller-context-public-physical.md`.
 
-The product supports declarative surface preconditions outside planner output. The authoritative Safari proof uses the existing `semantic-text` + `exact` precondition against the document title that Safari exposes deterministically in its semantic snapshot.
+### P7 completion boundary
 
-Physical s10 proved:
+P7 has shipped and physically validated one narrow real-use fallback at the API boundary:
 
-1. the negative BETA surface had exactly one BETA semantic match;
-2. the ALPHA contract precondition failed with `SURFACE_PRECONDITION_NOT_MET`;
-3. provider selection remained zero and no click was delivered on the wrong surface;
-4. the same Safari tab reloaded the same controlled document as ALPHA;
-5. a fresh semantic snapshot produced exactly one ALPHA match and no BETA match;
-6. normal `runTask` attempted semantic OPEN first and visual fallback became eligible only after `NO_SEMANTIC_TARGET`;
-7. the runtime surface precondition verified before provider selection;
-8. local macOS Vision was selected exactly once;
-9. Computer Control returned `CLICK_POSTED` without claiming success;
-10. independent post-action observation alone produced `VERIFIED_SUCCESS`;
-11. no screenshot/OCR/coordinates were logged and no external network was used;
-12. pointer, Safari, runtime and loopback server were cleaned up and product trees remained clean.
+```text
+caller already owns current Pulsar documentPath
+→ runTask receives pulsar-document caller context
+→ exact bounded visual fallback may be materialized
+```
 
-### P6D diagnostic lineage
+Do **not** claim that the default interactive CLI can already discover/provide this context. `main()` still invokes `runTask(task)` without trusted document provenance.
 
-All failures remain immutable:
+Do **not** generalize P7 into:
 
-- s01 `40dafd8277ba6c015eeba24eb84cdc6c1458d1c7`: multi-tab/current-surface ambiguity in the physical fixture.
-- s02 `68f19a7911d369986d41e2d7ea5bc200b53098fd`: dynamic DOM marker not reliably represented in Safari semantic snapshot.
-- s03 `aff7a1771a8b159f0b74289e6cdf6280cfb5f4ab`: arbitrary page heading still unsuitable after same-tab reload.
-- s04 `dbc816c746737304d90dd4d45e3672951fa95148`: Computer Use current-window descriptor adaptation bug exposed.
-- s05 `59c0e1c5b5b530fe9fdf3147a34caba3a16bcb5a`: descriptor fixed; Safari current-window title still not exact HTML title.
-- s06 `e8edb4b40ea9015e2a8fe5a43e510acd2232f049`: Safari window title shown to contain a browser-owned suffix.
-- s07 `091592162f2c6bab12596764326be7cde09cfb99`: diagnostic foreground fixture defect.
-- s08 `ce1ee1873174cdf63b9994dd9b832c9ad7f36058`: diagnostic PASS; semantic snapshot contains document title and URL components while window-title suffix is not derivable from tested URL data.
-- s09 `7ee7ec5c9b86c02fdb7a1eec625b7777e8b0cca3`: diagnostic PASS; document title is one exact semantic match and wrong title is zero matches.
-- s10 `ec7e9757dada06ca313e585c09a42fcf7202e90d`: authoritative full physical PASS.
+- generic Pulsar status-bar clicking;
+- arbitrary Pulsar OPEN targets;
+- automatic document-path inference from UI state;
+- generic application caller-context synthesis;
+- prefix/contains/fuzzy surface matching.
 
-No prefix/contains/fuzzy surface matching was introduced to obtain the PASS.
+## Active program: P8 trusted caller-context provenance
 
-### Important non-claim
+P8 must connect a real deterministic product workflow that legitimately owns a document path to the P7E caller-context API.
 
-`P6D SURFACE BETA`, `P6D SURFACE ALPHA`, `PROCEED → FINISHED`, their scope and the controlled loopback page are test-owned. They are evidence for the mechanism, not shipped generic Safari knowledge.
+The problem is provenance, not visual perception.
 
-## P6 completion boundary
+Required properties:
 
-The initial P6 visual-fallback safety architecture is complete:
+1. Identify the smallest existing workflow/competence that already knows the Pulsar document path through its own deterministic state.
+2. Define an explicit provenance-bearing caller-context envelope.
+3. Keep `documentPath` out of planner output.
+4. Never derive `documentPath` from window title, semantic snapshot, OCR, Vision or coordinates.
+5. Bind the context to the owning task/run and fail closed when absent, stale or incompatible.
+6. Do not add Computer Control mechanics merely to transport context.
+7. Reuse P7D/P7E exact contract and runtime surface guard unchanged where possible.
+8. Contract-test provenance and fail-closed behavior before physical testing.
+9. Physically validate the provenance-bearing path before claiming support in the default/interactive product flow.
 
-1. P6A — deterministic caller-owned registry;
-2. P6B — real-application visual-gap discovery;
-3. P6C — explicit caller scope and plan-aware bounded selection;
-4. P6D — deterministic runtime surface precondition before provider/action.
-
-This validates the mechanism required for safe future promotion. It does not authorize arbitrary applications, browser pages or visual actions.
-
-## Active program: P7 evidence-backed real-use-case discovery
-
-P7 must identify a genuinely useful deterministic application task before any built-in caller contract/skill knowledge is promoted.
-
-Requirements:
-
-- inspect existing application providers and competence/skill architecture first;
-- choose a real supported application/surface and useful outcome;
-- require stable, physically observable surface identity;
-- keep scope and surface identity outside planner output;
-- planner remains semantic-only;
-- semantic OPEN first, then P5B-eligible gap before visual perception;
-- provider selection remains lazy and Computer Use-owned;
-- first promoted case should keep exact target + independently verifiable postcondition;
-- physically validate before shipping registry/skill knowledge;
-- do not generalize controlled Safari evidence into generic web behavior.
-
-Avoid System Settings as the first P7 candidate because prior physical work exposed AX fragility. Safari may be used only for a genuinely bounded real task with evidence-backed surface identity.
+Immediate next checkpoint: **P8A caller-context provenance discovery and contract design**.
 
 ## Reference paths
 
@@ -203,8 +272,8 @@ For every fresh manual terminal session, the first command must be `cd` into the
 3. Implement/discover forward-only.
 4. Freeze exact product/test-source SHAs.
 5. Add only runner + manifest after source freeze.
-6. User runs the immutable physical session.
+6. User runs the immutable session.
 7. Inspect remote evidence, not only terminal summary.
-8. Promote only the claims physically evidenced.
+8. Promote only the claims evidenced.
 
-Immediate next checkpoint: **P7 evidence-backed real-use-case discovery**.
+Immediate next checkpoint: **P8A caller-context provenance discovery and contract design**.
