@@ -34,6 +34,9 @@ const {
   createLazyOpenVisualFallbackExecutionContext,
 } = require("./visual-fallback-execution-context");
 const {
+  resolveVisualFallbackContractsFromCallerContext,
+} = require("./visual-fallback-caller-context");
+const {
   strongBlockerEvidence,
   locateOrdinalResult,
   decideRecovery,
@@ -62,6 +65,64 @@ function visualFallbackContractForIntent(intent, contracts) {
     String(contract?.targetQuery?.text || "").trim() === target
   );
   return matches.length === 1 ? matches[0] : null;
+}
+
+function resolveEffectiveVisualFallbackContracts(plan, state = {}, options = {}) {
+  const hasExplicitContracts = options.visualFallbackContracts != null;
+  const hasCallerContext = options.visualFallbackCallerContext != null;
+
+  if (hasExplicitContracts && hasCallerContext) {
+    return {
+      ok:false,
+      state:"VISUAL_FALLBACK_CONTRACT_SOURCE_AMBIGUOUS",
+      error:"VISUAL_FALLBACK_CONTRACT_SOURCE_AMBIGUOUS",
+      recoveryPolicy:"NONE",
+    };
+  }
+
+  if (hasExplicitContracts) {
+    if (!Array.isArray(options.visualFallbackContracts)) {
+      return {
+        ok:false,
+        state:"VISUAL_FALLBACK_CONTRACTS_INVALID",
+        error:"VISUAL_FALLBACK_CONTRACTS_INVALID",
+        recoveryPolicy:"NONE",
+      };
+    }
+    return {
+      ok:true,
+      state:options.visualFallbackContracts.length
+        ? "VISUAL_FALLBACK_CONTRACTS_EXPLICIT"
+        : "NO_VISUAL_FALLBACK_CONTRACT",
+      contracts:options.visualFallbackContracts,
+      source:"explicit-contracts",
+    };
+  }
+
+  if (!hasCallerContext) {
+    return {
+      ok:true,
+      state:"NO_VISUAL_FALLBACK_CALLER_CONTEXT",
+      contracts:[],
+      source:"none",
+    };
+  }
+
+  const resolved = resolveVisualFallbackContractsFromCallerContext(
+    plan,
+    options.visualFallbackCallerContext,
+    {initialApplication:state.currentApp}
+  );
+  if (!resolved.ok) return resolved;
+
+  return {
+    ok:true,
+    state:resolved.state,
+    contracts:Array.isArray(resolved.contracts) ? resolved.contracts : [],
+    source:"caller-context",
+    callerContext:resolved.callerContext || null,
+    descriptors:Array.isArray(resolved.descriptors) ? resolved.descriptors : [],
+  };
 }
 
 function summarizeIntentResult(intent, result) {
@@ -285,6 +346,31 @@ async function runTask(task, options = {}) {
     JSON.stringify({task, plan}, null, 2)
   );
 
+  const visualFallbackSelection = resolveEffectiveVisualFallbackContracts(
+    plan,
+    state,
+    options
+  );
+  if (!visualFallbackSelection.ok) {
+    console.log(
+      `[visual-fallback-caller] FAIL: ` +
+      `${visualFallbackSelection.error || visualFallbackSelection.state || "invalid caller context"}`
+    );
+    return {
+      ok:false,
+      error:visualFallbackSelection.error || "visual fallback caller context failed",
+      intentResults:[],
+    };
+  }
+  const visualFallbackContracts = visualFallbackSelection.contracts;
+  if (visualFallbackSelection.source === "caller-context") {
+    console.log(
+      `[visual-fallback-caller] source=caller-context` +
+      ` | kind=${visualFallbackSelection.callerContext?.kind || "unknown"}` +
+      ` | contracts=${visualFallbackContracts.length}`
+    );
+  }
+
   let recoveryInferenceTotal = 0;
   let locatorInferenceTotal = 0;
   const intentResults = [];
@@ -295,7 +381,7 @@ async function runTask(task, options = {}) {
     const recoveryHistory = [];
     const visualContract = visualFallbackContractForIntent(
       intent,
-      options.visualFallbackContracts
+      visualFallbackContracts
     );
     const intentExecutionContext = visualContract
       ? createLazyOpenVisualFallbackExecutionContext(
@@ -771,5 +857,6 @@ module.exports = {
   runTask,
   cleanupComputerControl,
   visualFallbackContractForIntent,
+  resolveEffectiveVisualFallbackContracts,
   summarizeIntentResult,
 };
