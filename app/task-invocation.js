@@ -101,13 +101,29 @@ async function main(){
     return;
   }
 
+  // Reject unsupported invocation fields before loading the execution runtime.
+  // The executable process owns any Computer Control runtime started by the
+  // agent loop, while programmatic runTaskInvocation callers remain reusable
+  // and keep their existing lifecycle semantics.
+  const normalized=normalizeTaskInvocation(read.value);
+  if(!normalized.ok){
+    console.error(normalized.error||normalized.state||"TASK_INVOCATION_FAILED");
+    process.exitCode=1;
+    return;
+  }
+
+  const agentLoop=require("./agent-loop");
   let executed;
   try{
-    executed=await runTaskInvocation(read.value);
+    executed=await runTaskInvocation(read.value,{runTask:agentLoop.runTask});
   }catch(error){
     console.error(`TASK_INVOCATION_EXECUTION_EXCEPTION: ${error.message}`);
     process.exitCode=1;
     return;
+  }finally{
+    if(typeof agentLoop.cleanupComputerControl==="function"){
+      agentLoop.cleanupComputerControl();
+    }
   }
 
   if(!executed.ok){
